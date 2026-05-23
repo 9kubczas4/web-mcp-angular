@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The WebMCP Angular Demo is a standalone Angular 22 (next) application that showcases the framework's experimental WebMCP (Web Model Context Protocol) support. The demo exercises every WebMCP integration point documented in the source article: application-wide tool registration, route-scoped tools with automatic cleanup, dynamic tools tied to a service lifecycle, and Signal Forms exposed as AI-callable tools. Because most browsers do not yet ship a native WebMCP runtime, the demo loads the `@mcp-b/webmcp-polyfill` package and provides an in-app Tool Inspector and manual invocation UI so that a viewer can observe the current `navigator.modelContext` state and trigger tools without an MCP-aware agent.
+The WebMCP Angular Demo is a standalone Angular 22 (next) application that showcases the framework's experimental WebMCP (Web Model Context Protocol) support. The demo exercises every WebMCP integration point documented in the source article: application-wide tool registration, route-scoped tools with automatic cleanup, dynamic tools tied to a service lifecycle, and Signal Forms exposed as AI-callable tools. Because most browsers do not yet ship a native WebMCP runtime, the demo loads the `@mcp-b/webmcp-polyfill` package so that `navigator.modelContext` is populated at startup. The demo intentionally does not ship an in-app inspector or manual invocation UI: Chrome already provides a WebMCP devtools extension that inspects `navigator.modelContext` and invokes tools by hand, so duplicating that surface inside the application would only add noise.
 
 ## Glossary
 
@@ -20,8 +20,6 @@ The WebMCP Angular Demo is a standalone Angular 22 (next) application that showc
 - **Get_Cart_Summary_Tool**: The `getCartSummary` Service_Scoped_Tool returning the current cart contents and totals.
 - **Add_To_Cart_Tool**: The `addToCart` Service_Scoped_Tool that adds a product to the cart.
 - **Contact_Form_Tool**: The `submitContactForm` Form_Tool produced by the contact page's Signal Form.
-- **Tool_Inspector**: An in-app debug panel that lists every tool currently registered with the WebMCP_Runtime.
-- **Manual_Invoker**: An in-app UI that lets a human viewer call any registered tool with arbitrary JSON arguments and view the structured response.
 - **Auto_Cleanup_Router**: The Angular router configured with `withExperimentalAutoCleanupInjectors()` so Route_Scoped_Tools are released on navigation.
 - **Structured_Response**: A JSON-serializable object returned from a tool call, containing at minimum a status field and a payload.
 
@@ -78,29 +76,6 @@ The WebMCP Angular Demo is a standalone Angular 22 (next) application that showc
 4. IF the Contact_Form_Tool is invoked with values that fail one or more form validators, THEN THE WebMCP_Demo_App SHALL return a Structured_Response containing the validation errors per field and SHALL NOT submit the form.
 5. WHEN the user navigates away from the contact page, THE Auto_Cleanup_Router SHALL unregister the Contact_Form_Tool from the WebMCP_Runtime.
 
-### Requirement 5: Tool Inspector Panel
-
-**User Story:** As a viewer of the demo, I want to see exactly which WebMCP tools are currently registered, so that I can observe how scope and navigation affect the tool registry.
-
-#### Acceptance Criteria
-
-1. THE Tool_Inspector SHALL be visible on every page of the WebMCP_Demo_App.
-2. THE Tool_Inspector SHALL list every tool currently registered with the WebMCP_Runtime, showing each tool's name, description, and JSON schema.
-3. WHEN a Route_Scoped_Tool, Service_Scoped_Tool, or Form_Tool is registered or unregistered, THE Tool_Inspector SHALL update the displayed list within 500 milliseconds.
-4. THE Tool_Inspector SHALL label each tool with its scope category among Global_Tool, Route_Scoped_Tool, Service_Scoped_Tool, and Form_Tool.
-
-### Requirement 6: Manual Tool Invocation UI
-
-**User Story:** As a viewer without an MCP-capable agent, I want to invoke any registered tool from inside the demo with custom arguments, so that I can experience tool calls and inspect their responses.
-
-#### Acceptance Criteria
-
-1. THE Manual_Invoker SHALL allow the user to select any tool listed by the Tool_Inspector.
-2. WHEN a tool is selected, THE Manual_Invoker SHALL display an editable JSON argument editor pre-filled with a schema-derived template.
-3. WHEN the user submits a tool invocation, THE Manual_Invoker SHALL call the selected tool through `navigator.modelContext` and SHALL display the returned Structured_Response.
-4. IF the selected tool is no longer registered at submission time, THEN THE Manual_Invoker SHALL display an error message and SHALL NOT attempt the call.
-5. IF the submitted argument string is not valid JSON, THEN THE Manual_Invoker SHALL display a parse error and SHALL NOT attempt the call.
-
 ### Requirement 7: Tool Implementation Best Practices
 
 **User Story:** As a developer reading the demo source, I want every tool to follow the article's stated best practices, so that the code serves as a faithful reference implementation.
@@ -125,3 +100,5 @@ The WebMCP Angular Demo is a standalone Angular 22 (next) application that showc
 4. THE WebMCP_Demo_App SHALL express component-local mutable state using signals from `@angular/core`.
 5. THE WebMCP_Demo_App SHALL use the `@if`, `@for`, and `@switch` template control flow blocks instead of the `*ngIf`, `*ngFor`, and `*ngSwitch` structural directives.
 6. THE WebMCP_Demo_App SHALL declare zero `NgModule` classes.
+
+> Note: Requirement IDs 5 and 6 were retired together with the in-app Tool Inspector and Manual Invoker UIs. Numbering for the remaining requirements is preserved so existing source-code comments and test annotations stay in sync.

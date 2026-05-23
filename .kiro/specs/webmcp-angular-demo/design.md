@@ -2,7 +2,9 @@
 
 ## Overview
 
-The WebMCP Angular Demo is a small but complete Angular 22 (next) standalone application whose purpose is to make every WebMCP integration point visible and exercisable from the browser. The application loads the `@mcp-b/webmcp-polyfill` before bootstrap so `navigator.modelContext` exists, then registers tools at four different scopes: a Global_Tool registered at the application root, Route_Scoped_Tools registered through route `providers` on `/products` and `/dashboard`, Service_Scoped_Tools registered from inside `CartService` via `declareExperimentalWebMcpTool`, and a Form_Tool produced by `form()` from `@angular/forms/signals` on `/contact`. A persistent Tool Inspector panel and a Manual Invoker UI surface the live state of `navigator.modelContext` so a viewer without an MCP-aware agent can see registration churn and invoke any tool by hand.
+The WebMCP Angular Demo is a small but complete Angular 22 (next) standalone application whose purpose is to make every WebMCP integration point visible and exercisable from the browser. The application loads the `@mcp-b/webmcp-polyfill` before bootstrap so `navigator.modelContext` exists, then registers tools at four different scopes: a Global_Tool registered at the application root, Route_Scoped_Tools registered through route `providers` on `/products` and `/dashboard`, Service_Scoped_Tools registered from inside `CartService` via `declareExperimentalWebMcpTool`, and a Form_Tool produced by `form()` from `@angular/forms/signals` on `/contact`.
+
+Inspecting the live registry and invoking tools by hand is delegated to Chrome's WebMCP devtools extension; the demo intentionally does not duplicate that UI inside the application.
 
 ### Research Notes
 
@@ -14,7 +16,7 @@ This design relies on the experimental APIs documented in the source article and
 - `form()` and validators from `@angular/forms/signals` — the new signal-based forms API. Passing the `experimentalWebMcpTool: { name, description }` option causes the form to register a Form_Tool whose JSON schema is inferred from the form's signal model and whose handler runs the form's validators before submission.
 - `@mcp-b/webmcp-polyfill` — a no-op import that, when loaded before any code reads `navigator.modelContext`, shims the runtime in browsers that do not yet ship a native implementation. It exposes `registerTool`, `unregisterTool`, `listTools`, `callTool`, and an event-emitter-style change subscription on `navigator.modelContext`.
 
-The design treats `navigator.modelContext` as the single source of truth for the registry. The demo never duplicates the registry in its own data structures; instead, `ToolRegistryService` projects the runtime registry into a `Signal<ToolDescriptor[]>` for UI consumption.
+The design treats `navigator.modelContext` as the single source of truth for the registry. The demo never duplicates the registry in its own data structures — Chrome's WebMCP devtools extension reads it directly.
 
 ## Architecture
 
@@ -22,7 +24,7 @@ The design treats `navigator.modelContext` as the single source of truth for the
 
 - **Module-free, standalone components only.** Every component declares its own imports. There are zero `NgModule` classes.
 - **OnPush everywhere.** Every component sets `changeDetection: ChangeDetectionStrategy.OnPush` and uses signals for local state, so change detection is driven by signal reads inside the template.
-- **Signals for state, RxJS only where it already exists.** Component and service state is held in `signal`, `computed`, and `effect`. The only stream we subscribe to is the WebMCP runtime's change notifications, which we adapt into a signal inside `ToolRegistryService`.
+- **Signals for state, RxJS only where it already exists.** Component and service state is held in `signal`, `computed`, and `effect`.
 - **One injector per scope.** The application injector owns the Global_Tool. Each route that registers Route_Scoped_Tools relies on its route injector (kept alive only for the duration of the route, courtesy of `withExperimentalAutoCleanupInjectors()`). `CartService` is provided in the route injector for `/cart` so its lifetime is tied to that page.
 - **Polyfill-first bootstrap.** The polyfill is imported at the top of `main.ts` before the dynamic `bootstrapApplication` call.
 
@@ -36,12 +38,12 @@ src/
 └── app/
     ├── app.config.ts                        # ApplicationConfig, providers, router
     ├── app.routes.ts                        # Route table with route providers
-    ├── app.component.ts                     # Root shell: nav + <router-outlet> + inspector + invoker
+    ├── app.component.ts                     # Root shell: nav + <router-outlet>
     ├── core/
     │   ├── webmcp/
-    │   │   ├── tool-descriptor.ts           # Shared TS types
+    │   │   ├── tool-descriptor.ts           # Shared TS types (JsonSchema)
     │   │   ├── structured-response.ts       # Structured_Response helpers
-    │   │   ├── tool-registry.service.ts     # Signal<ToolDescriptor[]> over navigator.modelContext
+    │   │   ├── validate.ts                  # Hand-rolled JSON-schema validator
     │   │   └── global-tools.ts              # searchProducts tool factory (used by app.config)
     │   └── catalog/
     │       └── product.service.ts           # In-memory product catalog
@@ -57,10 +59,9 @@ src/
     │   │   └── dashboard.tools.ts           # exportReport factory
     │   ├── cart/cart.component.ts
     │   └── contact/contact.component.ts     # form() with experimentalWebMcpTool
-    └── ui/
-        ├── tool-inspector/tool-inspector.component.ts
-        └── manual-invoker/manual-invoker.component.ts
 ```
+
+The demo intentionally has no in-app inspector or manual invoker — Chrome's WebMCP devtools extension already provides both surfaces against `navigator.modelContext`.
 
 ### Component and Service Map
 
@@ -72,8 +73,6 @@ graph TD
 
   subgraph App["AppComponent (root shell)"]
     Outlet[router-outlet]
-    Inspector[ToolInspectorComponent]
-    Invoker[ManualInvokerComponent]
   end
 
   subgraph Pages
@@ -85,7 +84,6 @@ graph TD
   end
 
   subgraph Services
-    Registry[ToolRegistryService]
     ProductSvc[ProductService]
     CartSvc[CartService]
   end
@@ -105,10 +103,6 @@ graph TD
   Outlet --> Cart
   Outlet --> Contact
 
-  Inspector --> Registry
-  Invoker --> Registry
-  Registry <--> NMC
-
   SearchProducts -. provideExperimentalWebMcpTools at root .-> NMC
   FilterProducts -. route providers /products .-> NMC
   ExportReport -. route providers /dashboard .-> NMC
@@ -126,35 +120,6 @@ graph TD
   FilterProducts --> ProductSvc
 ```
 
-### Manual Invocation Sequence
-
-```mermaid
-sequenceDiagram
-  actor User
-  participant UI as ManualInvokerComponent
-  participant Reg as ToolRegistryService
-  participant NMC as navigator.modelContext
-  participant Handler as Tool Handler
-
-  User->>UI: Selects a tool, edits JSON args, clicks Invoke
-  UI->>UI: JSON.parse(args)
-  alt parse fails
-    UI-->>User: Show parse error, do not call
-  else parse ok
-    UI->>Reg: lookup descriptor by name
-    alt descriptor missing (already unregistered)
-      UI-->>User: Show 'tool no longer registered' error
-    else descriptor present
-      UI->>NMC: callTool(name, args)
-      NMC->>Handler: invoke with parsed args
-      Handler->>Handler: validate args, run logic
-      Handler-->>NMC: Structured_Response
-      NMC-->>UI: Structured_Response
-      UI-->>User: Render status + payload
-    end
-  end
-```
-
 
 ## Components and Interfaces
 
@@ -162,9 +127,9 @@ All components are standalone, OnPush, and use signals. None inject `ChangeDetec
 
 ### `AppComponent` (root shell)
 
-- **Responsibility:** Render the top navigation, the `<router-outlet>`, and the persistent debug UI (Tool Inspector + Manual Invoker).
+- **Responsibility:** Render the top navigation and the `<router-outlet>`.
 - **State:** None of its own. Reads no signals directly; the children manage their state.
-- **Template:** `@for` over a static nav-link array, `<router-outlet />`, then `<app-tool-inspector />` and `<app-manual-invoker />` side by side in a sticky panel.
+- **Template:** `@for` over a static nav-link array followed by `<router-outlet />`.
 - **OnPush note:** No mutation happens here, so OnPush is trivially satisfied.
 
 ### `HomeComponent` (`/`)
@@ -204,59 +169,7 @@ All components are standalone, OnPush, and use signals. None inject `ChangeDetec
 - **Signals:** `submission = signal<StructuredResponse | null>(null)`. The form itself is the source of truth for field state.
 - **Submit flow:** A "Submit" button calls the same submit action the Form_Tool's handler invokes, so manual UI submission and tool-driven submission are indistinguishable.
 
-### `ToolInspectorComponent`
-
-- **Responsibility:** Display a live list of every tool currently registered with the WebMCP_Runtime, labeled by scope.
-- **Inputs/Outputs:** None.
-- **Signals:**
-  - `tools = inject(ToolRegistryService).tools` — `Signal<ToolDescriptor[]>`.
-  - `selectedName = signal<string | null>(null)` (used for highlight + propagated to the invoker via a shared service or output if desired).
-- **Template:** A `@for` loop over `tools()` rendering name, scope badge, description, and a collapsible `<pre>` for the JSON schema.
-- **Scope label:** Each `ToolDescriptor` carries a `scope: 'global' | 'route' | 'service' | 'form'` field populated when the tool is registered (see "Scope tagging" under Tool Definitions).
-- **Latency requirement:** Updates within 500 ms because the registry signal is updated synchronously in the runtime's change callback (see `ToolRegistryService`).
-
-### `ManualInvokerComponent`
-
-- **Responsibility:** Let the user pick a tool, edit JSON args, invoke it through `navigator.modelContext`, and see the response.
-- **Inputs:** `selectedName = input<string | null>(null)` (optional pre-selection from the inspector).
-- **Outputs:** `invoked = output<{ name: string; response: StructuredResponse }>()` (for future logging; not required by the spec).
-- **Signals:**
-  - `tools = inject(ToolRegistryService).tools`
-  - `chosenName = signal<string | null>(null)`
-  - `argsText = signal<string>('{}')`
-  - `lastResponse = signal<StructuredResponse | null>(null)`
-  - `error = signal<string | null>(null)`
-  - `template = computed(() => buildArgsTemplate(this.tools().find(t => t.name === this.chosenName())?.inputSchema))`
-- **Behavior on tool change:** An `effect` writes `JSON.stringify(template(), null, 2)` into `argsText` whenever `chosenName` changes.
-- **Behavior on submit:** Parses `argsText`. If parse fails, set `error`. If the chosen tool is no longer in `tools()`, set `error` and abort. Otherwise call `navigator.modelContext.callTool(name, args)` and store the response.
-
 ## Services
-
-### `ToolRegistryService` (`providedIn: 'root'`)
-
-The single bridge between `navigator.modelContext` and the UI.
-
-```ts
-@Injectable({ providedIn: 'root' })
-export class ToolRegistryService {
-  private readonly _tools = signal<ToolDescriptor[]>([]);
-  readonly tools: Signal<ToolDescriptor[]> = this._tools.asReadonly();
-
-  constructor() {
-    const ctx = navigator.modelContext;
-    const refresh = () => this._tools.set(snapshotRegistry(ctx));
-    refresh();
-    const off = ctx.addEventListener?.('change', refresh)
-             ?? ctx.subscribe?.(refresh); // polyfill compatibility
-    inject(DestroyRef).onDestroy(() => {
-      ctx.removeEventListener?.('change', refresh);
-      off?.();
-    });
-  }
-}
-```
-
-`snapshotRegistry` reads `ctx.listTools()`, normalizes each entry into a `ToolDescriptor`, and attaches the scope label that was recorded at registration time (see "Scope tagging" below). The service holds no state besides the signal, so the UI never disagrees with the runtime.
 
 ### `ProductService` (`providedIn: 'root'`)
 
@@ -294,17 +207,14 @@ export class CartService {
       name: 'getCartSummary',
       description: 'Return the current cart line items, item count, and total price.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-      handler: () => ok(this.snapshot()),
-      // scope tag attached by helper:
-      meta: { scope: 'service' },
+      execute: () => ok(this.snapshot()),
     });
 
     declareExperimentalWebMcpTool({
       name: 'addToCart',
       description: 'Add a product to the cart by id and quantity.',
       inputSchema: ADD_TO_CART_SCHEMA,
-      handler: (args) => this.addToCartHandler(args),
-      meta: { scope: 'service' },
+      execute: (args) => this.addToCartHandler(args),
     });
   }
 
@@ -333,13 +243,16 @@ export const err = (code: string, message: string, details?: unknown): Structure
 
 ```ts
 // core/webmcp/tool-descriptor.ts
-export type ToolScope = 'global' | 'route' | 'service' | 'form';
-
-export interface ToolDescriptor {
-  name: string;
-  description: string;
-  inputSchema: JsonSchema;        // structural type from the runtime
-  scope: ToolScope;               // attached by registration helpers
+// Minimal structural JSON Schema sufficient for every schema the demo declares.
+// The runtime descriptor type is `ToolListItem` from the WebMCP types
+// (re-exported by `@angular/core/third_party/@mcp-b/webmcp-types`).
+export interface JsonSchema {
+  readonly type: 'object' | 'string' | 'integer' | 'number';
+  readonly properties?: Readonly<Record<string, JsonSchema>>;
+  readonly required?: readonly string[];
+  readonly additionalProperties?: boolean;
+  readonly enum?: readonly unknown[];
+  readonly minimum?: number;
 }
 ```
 
@@ -384,7 +297,7 @@ The contact form's signal model is `signal<ContactFormModel>({...})` and the val
 
 ## Tool Definitions
 
-Every tool produces a `StructuredResponse` and validates its arguments against an explicit JSON schema before any side effect. Every name is a verb-phrase in lowerCamelCase. The `meta.scope` field is attached at registration so the inspector can label entries.
+Every tool produces a `StructuredResponse` and validates its arguments against an explicit JSON schema before any side effect. Every name is a verb-phrase in lowerCamelCase.
 
 | Name | Scope | Registered via | Input schema (summary) | Handler responsibility |
 | --- | --- | --- | --- | --- |
@@ -395,9 +308,7 @@ Every tool produces a `StructuredResponse` and validates its arguments against a
 | `addToCart` | service (`CartService`) | `declareExperimentalWebMcpTool` in `CartService` ctor | `{ productId: string, quantity: integer >= 1 }` | Validate schema; if `productId` not in catalog return `err('not_found', ...)`; if `quantity` invalid return `err('validation', ...)`; otherwise mutate `_items` and return `ok(CartSummary)`. |
 | `submitContactForm` | form (`/contact`) | `form()`'s `experimentalWebMcpTool` option | Inferred from `ContactFormModel` plus validators | Run all form validators; if any fail, return `err('validation', { fieldErrors })` and do not submit; if all pass, run the submit action and return `ok({ submitted: true, ticketId })`. |
 
-### Scope Tagging
-
-`provideExperimentalWebMcpTools` accepts a `meta` field on each descriptor. We use it to record `scope` so the Tool Inspector can display a label. For the Form_Tool, the descriptor that `form()` emits will be wrapped at the route level so the same `meta.scope = 'form'` field is attached.
+The "Scope" column above is documentation only — it describes where in the application each tool is registered. Chrome's WebMCP devtools extension is the canonical place to observe scope behavior at runtime: route-scoped tools appear/disappear with navigation, and service-scoped tools disappear when their owning service injector is destroyed.
 
 ## Routing Configuration
 
@@ -437,6 +348,7 @@ export const APP_ROUTES: Routes = [
 ```ts
 // app.config.ts
 import { ApplicationConfig, provideExperimentalWebMcpTools } from '@angular/core';
+import { provideExperimentalWebMcpForms } from '@angular/forms/signals';
 import { provideRouter, withExperimentalAutoCleanupInjectors } from '@angular/router';
 import { APP_ROUTES } from './app.routes';
 import { searchProductsTool } from './core/webmcp/global-tools';
@@ -445,6 +357,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(APP_ROUTES, withExperimentalAutoCleanupInjectors()),
     provideExperimentalWebMcpTools([searchProductsTool]),
+    provideExperimentalWebMcpForms(),
   ],
 };
 ```
@@ -471,8 +384,7 @@ Order matters:
 1. The polyfill runs at import time and installs `navigator.modelContext` if it is missing.
 2. `bootstrapApplication` evaluates `appConfig.providers`, which calls `provideExperimentalWebMcpTools([searchProductsTool])`. The Global_Tool is now registered.
 3. The router is constructed with `withExperimentalAutoCleanupInjectors()` so route injectors are torn down on deactivation.
-4. `ToolRegistryService` (lazily instantiated by the inspector) reads the current registry and subscribes to change notifications.
-5. Subsequent navigation registers/unregisters Route_Scoped_Tools and Form_Tools; `CartService`'s constructor registers Service_Scoped_Tools the first time it is injected.
+4. Subsequent navigation registers/unregisters Route_Scoped_Tools and Form_Tools; `CartService`'s constructor registers Service_Scoped_Tools the first time it is injected.
 
 ## Acceptance Criteria Testing Prework
 
@@ -496,20 +408,15 @@ The full prework analysis was performed using the `prework` tool. The summary be
 | 4.1 contact form built with `experimentalWebMcpTool` option | SMOKE | Configuration check. |
 | 4.2 / 4.5 form tool present iff on /contact | PROPERTY | Subsumed by registry parity. |
 | 4.3 / 4.4 valid/invalid form input behavior | PROPERTY | Validator-gating property. |
-| 5.1 inspector visible everywhere | EXAMPLE | Layout placement check. |
-| 5.2 / 5.3 / 5.4 inspector reflects registry with scope labels | PROPERTY | Subsumed by inspector-equality property. |
-| 6.1 invoker selectable set equals registry | PROPERTY | Subsumed by inspector-equality property. |
-| 6.2 schema-derived template covers required fields | PROPERTY | Universal over schemas. |
-| 6.3 invocation result is displayed | PROPERTY (transparency) | Universal: rendered response equals runtime response. |
-| 6.4 stale tool selection: no call, show error | PROPERTY | Universal over (was-listed, now-unlisted) sequences. |
-| 6.5 invalid JSON: no call, show error | PROPERTY | Universal over malformed JSON inputs. |
 | 7.1 / 7.2 / 7.3 well-formed descriptors | PROPERTY | Combined into descriptor-shape property. |
 | 7.4 schema validation before side effect | PROPERTY | Combined into addToCart and form-validator gating. |
 | 7.5 every handler returns Structured_Response | PROPERTY | Response-shape property over the entire registry. |
 | 8.1 dependencies on `@next` | SMOKE | package.json check. |
 | 8.2–8.6 stack and convention rules | SMOKE | Static AST/template checks. |
 
-After redundancy reflection (full reasoning in the prework context), we keep seven properties below: the universal response-shape property; registry parity over navigation; the scope-lifecycle property for `CartService`; the inspector-equality property; the `addToCart` invariant; the contact-form validator-gating property; and the descriptor well-formedness property.
+> Note: Requirement IDs 5 and 6 were retired together with the in-app Tool Inspector and Manual Invoker UIs. Numbering for the remaining requirements is preserved so existing source-code comments and test annotations stay in sync.
+
+After redundancy reflection (full reasoning in the prework context), we keep six properties below, numbered 1–3 and 5–7. Property 4 (Tool Inspector equality) was retired together with the in-app inspector/invoker surface; the remaining numbering is preserved so existing source-code comments and test annotations stay in sync.
 
 ## Correctness Properties
 
@@ -533,12 +440,6 @@ After redundancy reflection (full reasoning in the prework context), we keep sev
 
 **Validates: Requirements 3.6**
 
-### Property 4: Tool Inspector equals the runtime registry
-
-*For any* state of the WebMCP_Runtime, the list rendered by `ToolInspectorComponent` contains exactly one entry per name returned by `navigator.modelContext.listTools()`, and each rendered entry's name, description, JSON schema, and scope label are equal to the corresponding fields on the runtime descriptor.
-
-**Validates: Requirements 5.2, 5.3, 5.4, 6.1**
-
 ### Property 5: `addToCart` mutates state only on valid input
 
 *For any* `CartService` state and *for any* candidate args `{ productId, quantity }`, after invoking `addToCart(args)` the cart state is changed *if and only if* `productId` is the id of a product in the catalog AND `quantity` is a positive integer; in every other case the cart state is byte-for-byte unchanged and the response has `status === 'error'`.
@@ -556,6 +457,8 @@ After redundancy reflection (full reasoning in the prework context), we keep sev
 *For any* descriptor returned by `navigator.modelContext.listTools()`, the descriptor's `name` matches `/^[a-z][a-zA-Z0-9]*$/` (lowerCamelCase), its `description` is a non-empty string, and its `inputSchema` is an object with an explicit `type` field.
 
 **Validates: Requirements 7.1, 7.2, 7.3**
+
+> Note: Property 4 (Tool Inspector equality) was retired together with the in-app Tool Inspector and Manual Invoker UIs. Property numbering for the remaining six properties is preserved so existing test annotations and source-code comments stay in sync.
 
 ## Error Handling
 
@@ -580,19 +483,13 @@ Validation runs before any side effect (Property 5 and Property 6 depend on this
 
 ### Polyfill Caveats
 
-- The polyfill is a runtime shim. If a browser ships a native `navigator.modelContext`, the polyfill should detect it and no-op; we treat both cases identically. `ToolRegistryService` calls `addEventListener?.('change', ...)` with optional chaining and falls back to a `subscribe?.(...)` style if the polyfill exposes that API instead.
-- Some polyfill versions may invoke change callbacks asynchronously. `ToolRegistryService` always reads `listTools()` inside the callback rather than trusting an event payload, so the inspector signal can never lag the runtime.
-- If `navigator.modelContext` is unexpectedly missing at startup (e.g. the polyfill import was tree-shaken), the application logs an error and renders an inline banner in `AppComponent`. The Tool Inspector then renders an empty list rather than crashing.
+- The polyfill is a runtime shim. If a browser ships a native `navigator.modelContext`, the polyfill should detect it and no-op; we treat both cases identically. The demo never reads `navigator.modelContext` from application code — Chrome's WebMCP devtools extension is the only consumer outside Angular's `provideExperimentalWebMcpTools` / `declareExperimentalWebMcpTool` registration paths.
+- If `navigator.modelContext` is unexpectedly missing at startup (e.g. the polyfill import was tree-shaken), the registration providers throw at bootstrap time. The application logs an error in the console rather than swallowing it.
 
 ### Routing
 
 - Route guards are not used. If they are added later, the route injector is still created before the guard resolves, so Route_Scoped_Tools registered through `Route.providers` will appear briefly even if the guard later denies activation. The design assumes no guards in this demo.
 - Lazy-loaded routes mean the route's `providers` array is evaluated on first navigation. The auto-cleanup feature still tears the injector down on deactivation, so subsequent navigations re-register from scratch.
-
-### Manual Invoker
-
-- JSON parse errors and "tool no longer registered" cases are surfaced inline; `navigator.modelContext.callTool` is never called for them.
-- A handler that throws synchronously is caught by the runtime; the invoker treats anything other than a `StructuredResponse` shape as an error and renders a normalized error message.
 
 ## Testing Strategy
 
@@ -600,15 +497,14 @@ Validation runs before any side effect (Property 5 and Property 6 depend on this
 
 PBT applies to the parts of this demo that have meaningful input variation: tool handlers, the registry parity invariant, the cart invariant, the form validator gating, and descriptor well-formedness. We pick **fast-check** as the property-based testing library for the target language (TypeScript) and run each property test for a minimum of 100 iterations. Each PBT is tagged with a comment in the form `// Feature: webmcp-angular-demo, Property N: <property text>` for traceability.
 
-PBT targets, mapped to the seven properties:
+PBT targets, mapped to the six retained properties (numbering keeps the original gaps so source comments stay valid):
 
 1. **Property 1 (response shape).** For each registered tool, generate arbitrary JSON inputs with `fc.anything()` and assert `response.status` is `'success'` or `'error'` and `response.payload !== undefined`.
 2. **Property 2 (registry parity).** Generate random navigation sequences with `fc.array(fc.constantFrom('/', '/products', '/dashboard', '/cart', '/contact'))`, drive the router through them, and after each step assert set equality between `listTools()` and the expected union of (global, active-route, alive-service, active-form) tool names.
 3. **Property 3 (service teardown).** Generate random create/destroy sequences for child injectors hosting `CartService` and assert that after each destroy the cart tool names are absent.
-4. **Property 4 (inspector equality).** Generate random registry states (by registering and unregistering test tools) and assert the rendered inspector list equals `listTools()` field-by-field.
-5. **Property 5 (`addToCart` invariant).** Generate random `(productId, quantity)` tuples mixing valid and invalid values; assert state changes iff inputs are valid and that response status reflects validity.
-6. **Property 6 (form validator gating).** Generate random `ContactFormModel` values that systematically pass or violate each validator; assert that the submit action (a `vi.fn()`) is called exactly when all validators pass and the response status matches.
-7. **Property 7 (descriptor shape).** Walk `listTools()` after navigating to each route and assert every descriptor satisfies the lowerCamelCase + non-empty description + explicit-`type` schema constraint.
+4. **Property 5 (`addToCart` invariant).** Generate random `(productId, quantity)` tuples mixing valid and invalid values; assert state changes iff inputs are valid and that response status reflects validity.
+5. **Property 6 (form validator gating).** Generate random `ContactFormModel` values that systematically pass or violate each validator; assert that the submit action (a `vi.fn()`) is called exactly when all validators pass and the response status matches.
+6. **Property 7 (descriptor shape).** Walk `listTools()` after navigating to each route and assert every descriptor satisfies the lowerCamelCase + non-empty description + explicit-`type` schema constraint.
 
 Configuration:
 
@@ -622,9 +518,8 @@ These cases either don't vary meaningfully with input or are configuration check
 
 - **Bootstrap order (1.1, 1.5, 8.1):** Static checks on `main.ts` and `package.json`.
 - **Initial registration (1.2, 3.1, 4.1):** TestBed-style integration tests that bootstrap the app (or instantiate `CartService`) and assert specific tool names are listed.
-- **UI placement (5.1):** Render `AppComponent` and assert `<app-tool-inspector>` and `<app-manual-invoker>` are present in the DOM regardless of route.
 - **Static stack rules (8.2–8.6):** A small AST/grep-style test that scans `src/app/**` for `@NgModule`, missing `standalone: true`, missing `OnPush`, and uses of `*ngIf`/`*ngFor`/`*ngSwitch`. Failing matches fail the test.
-- **Smoke render of each page:** A single Karma/Vitest example test per page route that the component renders without throwing.
+- **Smoke render of each page:** A single Vitest example test per page route that the component renders without throwing.
 
 ### Test Boundaries
 

@@ -1,1 +1,382 @@
-/* You can add global styles to this file, and also import other style files */
+/* ---------------------------------------------------------------------- *
+ * Global design tokens and base styles.
+ * Light is the default; `prefers-color-scheme: dark` switches palette only.
+ * Motion-heavy effects (shimmer) opt out under `prefers-reduced-motion`.
+ * ---------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light dark;
+
+  /* Type */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+
+  /* Light palette */
+  --color-bg: #f7f8fa;
+  --color-bg-elevated: #ffffff;
+  --color-bg-subtle: #eef0f4;
+  --color-fg: #0f172a;
+  --color-fg-muted: #475569;
+  --color-fg-subtle: #64748b;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #eef2ff;
+  --color-success: #10b981;
+  --color-success-soft: #ecfdf5;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-danger-soft: #fef2f2;
+
+  /* Category accents — used by product card skeletons */
+  --color-cat-audio: #6366f1;
+  --color-cat-audio-soft: #eef2ff;
+  --color-cat-wearable: #ec4899;
+  --color-cat-wearable-soft: #fdf2f8;
+  --color-cat-home: #14b8a6;
+  --color-cat-home-soft: #ecfeff;
+  --color-cat-office: #f59e0b;
+  --color-cat-office-soft: #fff7ed;
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md:
+    0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+  --shadow-lg:
+    0 12px 24px -8px rgba(15, 23, 42, 0.18), 0 4px 8px -4px rgba(15, 23, 42, 0.08);
+
+  /* Layout */
+  --content-max: 72rem;
+  --header-height: 64px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0b1020;
+    --color-bg-elevated: #11172a;
+    --color-bg-subtle: #1a2238;
+    --color-fg: #e2e8f0;
+    --color-fg-muted: #94a3b8;
+    --color-fg-subtle: #64748b;
+    --color-border: #1e2a44;
+    --color-border-strong: #2a3a5c;
+    --color-accent: #818cf8;
+    --color-accent-hover: #a5b4fc;
+    --color-accent-fg: #0b1020;
+    --color-accent-soft: #1c2444;
+    --color-success: #34d399;
+    --color-success-soft: #082f23;
+    --color-warning: #fbbf24;
+    --color-danger: #f87171;
+    --color-danger-soft: #2c1414;
+
+    --color-cat-audio: #a5b4fc;
+    --color-cat-audio-soft: #1c2444;
+    --color-cat-wearable: #f9a8d4;
+    --color-cat-wearable-soft: #2c1626;
+    --color-cat-home: #5eead4;
+    --color-cat-home-soft: #0a2a2a;
+    --color-cat-office: #fcd34d;
+    --color-cat-office-soft: #2a1f0a;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md:
+      0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg:
+      0 12px 24px -8px rgba(0, 0, 0, 0.6), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0 0 var(--space-3);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--color-fg);
+}
+
+h1 {
+  font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.4rem);
+  line-height: 1.15;
+}
+
+h2 {
+  font-size: 1.35rem;
+}
+
+h3 {
+  font-size: 1.1rem;
+}
+
+p {
+  margin: 0 0 var(--space-3);
+  color: var(--color-fg-muted);
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-bg-subtle);
+  color: var(--color-fg);
+  padding: 0.1em 0.4em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+  border: 1px solid transparent;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+button.secondary,
+button[type='button'].ghost {
+  background: var(--color-bg-elevated);
+  color: var(--color-fg);
+  border-color: var(--color-border-strong);
+}
+
+button.secondary:hover:not(:disabled),
+button[type='button'].ghost:hover:not(:disabled) {
+  background: var(--color-bg-subtle);
+}
+
+input[type='text'],
+input[type='email'],
+input[type='number'],
+select,
+textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-fg);
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+main {
+  display: block;
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-7);
+}
+
+@media (max-width: 640px) {
+  main {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
+}
+
+/* Reusable surfaces / utilities ---------------------------------------- */
+
+.surface {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: shimmer-sweep 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer::after {
+    animation: none;
+  }
+}
+
+@keyframes shimmer-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Pill / badge --------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.15em 0.6em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-subtle);
+  color: var(--color-fg-muted);
+  border: 1px solid var(--color-border);
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+
+.badge--accent {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  border-color: transparent;
+}
+
+.badge--success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  border-color: transparent;
+}
+
+.badge--danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border-color: transparent;
+}
+
+/* Skip link for keyboard users ----------------------------------------- */
+
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: var(--space-3);
+  background: var(--color-fg);
+  color: var(--color-bg);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  transform: translateY(-150%);
+  transition: transform 0.2s ease;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}

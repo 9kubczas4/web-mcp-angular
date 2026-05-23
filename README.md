@@ -1,59 +1,86 @@
-# WebmcpAngularDemo
+# webmcp-angular-demo
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.0-rc.1.
+A small Angular 22 (next) application that demonstrates every WebMCP integration scope the Angular framework currently exposes: a global tool registered at the application root, route-scoped tools registered through `Route.providers`, service-scoped tools registered from inside a service constructor, and a form-scoped tool produced by the new Signal Forms `form()` API. The demo intentionally has no in-app inspector or manual invoker — Chrome's WebMCP devtools extension already provides both surfaces against `navigator.modelContext`.
+
+## Prerequisites
+
+- Node `>=22`. The workspace is pinned to `22.22.3` via [nvm](https://github.com/nvm-sh/nvm); run `nvm use 22.22.3` (or `nvm install 22.22.3` first time) before any npm command.
+- Angular CLI v22 next. Installed locally as a devDependency, no global install required — every command below uses `npm`/`npx`.
+
+## Setup
+
+```bash
+npm install
+```
 
 ## Development server
 
-To start a local development server, run:
-
 ```bash
-ng serve
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Runs `ng serve` and opens the app at `http://localhost:4200/`.
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Tests
 
 ```bash
-ng generate component component-name
+npm test
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Runs `ng test`, which uses [Vitest](https://vitest.dev/) under the `@angular/build:unit-test` builder. The suite includes unit tests, end-to-end integration tests, and property-based tests (via `fast-check`) covering the six correctness properties from the design document.
+
+## Lint and format
 
 ```bash
-ng generate --help
+npm run lint           # ESLint with angular-eslint, max-warnings 0
+npm run lint:fix       # auto-fix what's safe
+npm run format         # Prettier write
+npm run format:check   # Prettier verify
 ```
 
-## Building
+## Demo tour
 
-To build the project run:
+Each route registers tools at a different scope. Open Chrome's WebMCP devtools extension and watch `navigator.modelContext` change as you navigate.
 
-```bash
-ng build
+| Route        | Tool(s)                       | Scope                                                  |
+| ------------ | ----------------------------- | ------------------------------------------------------ |
+| `/`          | (none)                        | overview page                                          |
+| `/products`  | `filterProducts`              | route-scoped (`Route.providers`)                       |
+| `/dashboard` | `exportReport`                | route-scoped (`Route.providers`)                       |
+| `/cart`      | `getCartSummary`, `addToCart` | service-scoped (`CartService` constructor)             |
+| `/contact`   | `submitContactForm`           | form-scoped (`form()` `experimentalWebMcpTool` option) |
+
+The `searchProducts` tool is registered globally in `app.config.ts` and is therefore available on every route.
+
+`CartService` is `providedIn: 'root'` and is materialized eagerly via `provideAppInitializer` in `app.config.ts`, so its two service-scoped tools are also alive on every route — destruction-driven unregistration is exercised in the property tests by creating short-lived child injectors that own their own `CartService` instances.
+
+## Inspecting and invoking tools
+
+Install Chrome's WebMCP devtools extension and open it on any route. The extension reads `navigator.modelContext` directly, so you can:
+
+- Watch the tool list change as you navigate between routes.
+- Inspect each tool's input schema and description.
+- Invoke tools by hand with arbitrary arguments.
+
+The demo does not duplicate this UI inside the application.
+
+## Polyfill caveat
+
+`@mcp-b/webmcp-polyfill` is imported as the very first statement in `src/main.ts`, before `bootstrapApplication`. This guarantees `navigator.modelContext` exists before any provider runs in browsers that do not yet ship a native WebMCP runtime. If a browser later ships a native implementation, the polyfill detects it and no-ops, so the import remains safe.
+
+## Project layout
+
 ```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
+src/
+├── main.ts                                  # imports polyfill, then bootstraps
+└── app/
+    ├── app.config.ts                        # ApplicationConfig: router, global tool, forms
+    ├── app.routes.ts                        # Route table with route-level tool providers
+    ├── app.ts                               # Root shell with <router-outlet />
+    ├── core/
+    │   ├── webmcp/                          # tool descriptor types, validate, structured-response, global-tools
+    │   └── catalog/                         # Product types and ProductService
+    ├── cart/                                # CartService and cart-line types
+    └── pages/
+        ├── home/, products/, dashboard/, cart/, contact/
 ```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

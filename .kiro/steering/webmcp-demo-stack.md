@@ -52,12 +52,11 @@ src/
     │   ├── webmcp/                          # tool-descriptor, structured-response, registry, validate, global-tools
     │   └── catalog/                         # product types and ProductService
     ├── cart/                                # CartService and cart-line types
-    ├── pages/
-    │   ├── home/, products/, dashboard/, cart/, contact/
-    └── ui/
-        ├── tool-inspector/
-        └── manual-invoker/
+    └── pages/
+        ├── home/, products/, dashboard/, cart/, contact/
 ```
+
+The demo intentionally has no in-app Tool Inspector or Manual Invoker — Chrome's WebMCP devtools extension already provides both surfaces against `navigator.modelContext`.
 
 ## Skills and references
 
