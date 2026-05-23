@@ -1,0 +1,10 @@
+dist
+node_modules
+.angular
+coverage
+.kiro
+.agents
+package-lock.json
+
+# Exclude AGENTS.md so prettier doesn't fight the spec author's formatting
+AGENTS.md
