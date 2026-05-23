@@ -1,0 +1,57 @@
+<section aria-labelledby="cart-title">
+  <header class="cart-header">
+    <h1 id="cart-title">Cart</h1>
+    <p>
+      <code>CartService</code> registers the <code>getCartSummary</code> and
+      <code>addToCart</code> tools from its constructor via
+      <code>declareExperimentalWebMcpTool</code>. The "Add demo item" button calls the same
+      handler the <code>addToCart</code> tool uses, so both paths stay semantically identical.
+    </p>
+  </header>
+
+  <div class="summary-card" role="status" aria-live="polite">
+    <div class="summary-card__metric">
+      <span class="summary-card__metric-label">Items</span>
+      <span class="summary-card__metric-value">{{ itemCount() }}</span>
+    </div>
+    <div class="summary-card__metric">
+      <span class="summary-card__metric-label">Total</span>
+      <span class="summary-card__metric-value"
+        >{{ total() | number: '1.2-2'
+        }}<span class="summary-card__currency">USD</span></span
+      >
+    </div>
+    <div class="summary-card__cta">
+      <button type="button" (click)="addDemoItem()">+ Add demo item</button>
+    </div>
+  </div>
+
+  @if (lastError(); as error) {
+    <p class="alert" role="alert">
+      <strong>{{ error.code }}</strong>: {{ error.message }}
+    </p>
+  }
+
+  @if (items().length === 0) {
+    <div class="empty">
+      <span class="empty__icon" aria-hidden="true">🛒</span>
+      <strong>Cart is empty.</strong>
+      <span>Click "Add demo item" or invoke <code>addToCart</code> via the devtools.</span>
+    </div>
+  } @else {
+    <ul class="lines" aria-label="Cart contents" role="list">
+      @for (line of items(); track line.productId) {
+        <li class="line">
+          <div class="line__main">
+            <span class="line__name">{{ line.name }}</span>
+            <span class="line__id">{{ line.productId }}</span>
+          </div>
+          <div class="line__totals">
+            <div class="line__qty">qty {{ line.quantity }}</div>
+            <div class="line__amount">{{ line.price | number: '1.2-2' }} USD</div>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>

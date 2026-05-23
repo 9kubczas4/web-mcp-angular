@@ -1,0 +1,90 @@
+<section aria-labelledby="contact-title">
+  <h1 id="contact-title">Contact</h1>
+  <p>
+    This form registers the <code>submitContactForm</code> tool via <code>form()</code>'s
+    <code>experimentalWebMcpTool</code> option. The same submit action runs whether you click
+    Submit or invoke the tool through <code>navigator.modelContext</code>, so the validation
+    gating and the response shape are identical across both paths.
+  </p>
+
+  <div class="contact-grid">
+    <form class="contact-form" (submit)="onSubmit($event)" novalidate>
+      <div class="contact-form__row">
+        <label for="contact-name">Name</label>
+        <input
+          id="contact-name"
+          type="text"
+          autocomplete="name"
+          [formField]="contactForm.name"
+        />
+      </div>
+
+      <div class="contact-form__row">
+        <label for="contact-email">Email</label>
+        <input
+          id="contact-email"
+          type="email"
+          autocomplete="email"
+          [formField]="contactForm.email"
+        />
+      </div>
+
+      <div class="contact-form__row">
+        <label for="contact-topic">Topic</label>
+        <select id="contact-topic" [formField]="contactForm.topic">
+          @for (option of topics; track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="contact-form__row">
+        <label for="contact-message">Message</label>
+        <textarea id="contact-message" rows="5" [formField]="contactForm.message"></textarea>
+      </div>
+
+      <button type="submit" [disabled]="submitting()">
+        @if (submitting()) {
+          Submitting…
+        } @else {
+          Submit
+        }
+      </button>
+
+      @if (submission(); as response) {
+        @if (successPayload(); as success) {
+          <div class="feedback feedback--success" role="status" aria-live="polite">
+            <strong>Submission accepted.</strong> Ticket id:
+            <code>{{ success.ticketId }}</code>
+          </div>
+        }
+
+        @if (errorPayload(); as failure) {
+          <div class="feedback feedback--error" role="alert">
+            <strong>{{ failure.code }}</strong
+            >: {{ failure.message }}
+            @if (fieldErrorMessages().length > 0) {
+              <ul aria-label="Validation errors">
+                @for (entry of fieldErrorMessages(); track entry.field) {
+                  <li><strong>{{ entry.field }}</strong>: {{ entry.message }}</li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      }
+    </form>
+
+    <aside class="side-card" aria-label="What this form proves">
+      <h2>What this proves</h2>
+      <p>
+        Validators are wired through <code>form()</code>'s schema. They run before submission
+        for both manual clicks and tool invocations.
+      </p>
+      <p>
+        On <code>/contact</code>, <code>navigator.modelContext.getTools()</code> includes
+        <code>submitContactForm</code>. Navigate away and the tool unregisters automatically.
+      </p>
+    </aside>
+  </div>
+</section>

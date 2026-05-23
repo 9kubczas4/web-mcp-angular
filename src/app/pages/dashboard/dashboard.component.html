@@ -1,0 +1,92 @@
+<section aria-labelledby="dashboard-title">
+  <header class="dashboard-header">
+    <h1 id="dashboard-title">Dashboard</h1>
+    <p>
+      This route registers the <code>exportReport</code> tool via
+      <code>provideExperimentalWebMcpTools</code> in its <code>providers</code> array. The
+      button below calls the same <code>runExport</code> helper the tool's handler uses, so
+      manual and tool-driven invocations produce identical responses.
+    </p>
+  </header>
+
+  <form class="panel" aria-label="Export options" (submit)="$event.preventDefault()">
+    <fieldset class="format-picker">
+      <legend>Format</legend>
+      @for (option of formats; track option) {
+        <label class="format-option" [attr.for]="'format-' + option">
+          <input
+            type="radio"
+            name="format"
+            [id]="'format-' + option"
+            [value]="option"
+            [checked]="format() === option"
+            (change)="onFormatChange(option)"
+          />
+          <span class="format-option__label">{{ option | uppercase }}</span>
+          <span class="format-option__hint">
+            @switch (option) {
+              @case ('pdf') {
+                Formatted document
+              }
+              @case ('csv') {
+                Comma-separated values
+              }
+              @case ('json') {
+                Structured data
+              }
+            }
+          </span>
+        </label>
+      }
+    </fieldset>
+
+    <div class="actions">
+      <button type="button" class="primary" (click)="export()">Export report</button>
+      <span class="preview" role="status" aria-live="polite">
+        @switch (format()) {
+          @case ('pdf') {
+            A formatted PDF will be produced.
+          }
+          @case ('csv') {
+            A comma-separated CSV will be produced.
+          }
+          @case ('json') {
+            A JSON file will be produced.
+          }
+        }
+      </span>
+    </div>
+  </form>
+
+  @if (lastExport(); as response) {
+    <section class="panel" aria-label="Last export result">
+      <div class="result">
+        <div class="result__head">
+          <h2>Last export</h2>
+          @if (response.status === 'success') {
+            <span class="badge badge--success">Success</span>
+          } @else {
+            <span class="badge badge--danger">Error</span>
+          }
+        </div>
+
+        @if (successPayload(); as success) {
+          <dl>
+            <dt>Format</dt>
+            <dd>{{ success.format | uppercase }}</dd>
+            <dt>Generated at</dt>
+            <dd>{{ success.generatedAt }}</dd>
+            <dt>Rows</dt>
+            <dd>{{ success.rows }}</dd>
+          </dl>
+        }
+
+        @if (errorPayload(); as error) {
+          <p class="result--error" role="alert">
+            <strong>{{ error.code }}</strong>: {{ error.message }}
+          </p>
+        }
+      </div>
+    </section>
+  }
+</section>

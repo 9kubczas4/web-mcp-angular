@@ -1,0 +1,76 @@
+<section class="hero" aria-labelledby="home-title">
+  <span class="hero__eyebrow">Angular 22 · WebMCP</span>
+  <h1 id="home-title">WebMCP Angular Demo</h1>
+  <p>
+    Every page registers a tool with <code>navigator.modelContext</code> at a different scope.
+    Open Chrome's WebMCP devtools extension to watch the registry change as you navigate, and
+    invoke any tool by hand.
+  </p>
+  <p class="hero__cta">
+    <a class="button primary" routerLink="/products">Browse products</a>
+    <a class="button ghost" routerLink="/contact">Try the contact form</a>
+  </p>
+  <p class="hero__byline">
+    <span
+      >Built by
+      <a href="https://pawelkubiak.dev" target="_blank" rel="noopener noreferrer"
+        ><strong>Paweł Kubiak</strong></a
+      ></span
+    >
+    <span class="hero__byline-divider" aria-hidden="true">·</span>
+    <a
+      href="https://pawelkubiak.dev/blog/webmcp-teaching-ai-agents-to-interact-with-your-web-app"
+      target="_blank"
+      rel="noopener noreferrer"
+      >WebMCP: teaching AI agents</a
+    >
+    <span class="hero__byline-divider" aria-hidden="true">·</span>
+    <a
+      href="https://pawelkubiak.dev/blog/webmcp-in-angular-framework-level-support-for-ai-agents"
+      target="_blank"
+      rel="noopener noreferrer"
+      >WebMCP in Angular</a
+    >
+  </p>
+</section>
+
+<h2 class="section-heading">Routes and tools</h2>
+<ul class="grid" role="list">
+  @for (route of routes; track route.path) {
+    <li>
+      <a class="route-card" [routerLink]="route.path">
+        <div class="route-card__head">
+          <h3 class="route-card__title">{{ route.title }}</h3>
+          <span class="route-card__path">{{ route.path }}</span>
+        </div>
+        <p class="route-card__summary">{{ route.summary }}</p>
+        @if (route.tool; as tool) {
+          <div class="route-card__tool">
+            <code>{{ tool.name }}</code>
+            <span class="badge">{{ tool.scope }}</span>
+          </div>
+        }
+      </a>
+    </li>
+  }
+</ul>
+
+<h2 class="section-heading">Always available</h2>
+<ul class="global-tools" role="list">
+  <li>
+    <div class="global-tools__head">
+      <code>searchProducts</code>
+      <span class="badge badge--accent">global</span>
+    </div>
+    <p>Registered at application bootstrap. Available on every route.</p>
+  </li>
+  <li>
+    <div class="global-tools__head">
+      <code>getCartSummary</code>
+      <span aria-hidden="true">/</span>
+      <code>addToCart</code>
+      <span class="badge badge--accent">service-scoped</span>
+    </div>
+    <p>Registered by <code>CartService</code>'s constructor; alive for the app's lifetime.</p>
+  </li>
+</ul>
