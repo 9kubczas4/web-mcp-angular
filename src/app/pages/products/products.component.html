@@ -2,8 +2,9 @@
   <header class="products-header">
     <h1 id="products-title">Products</h1>
     <p>
-      Filters here mirror the <code>filterProducts</code> tool's input schema. The tool is
-      registered on this route via <code>provideExperimentalWebMcpTools</code> and disappears
+      Filters here mirror the <code>filterProducts</code> tool's input schema and share
+      <code>ProductsFilterService</code> state, so a tool call updates the controls and
+      catalog below. The tool is registered on this route via <code>provideExperimentalWebMcpTools</code> and disappears
       from <code>navigator.modelContext</code> when you navigate away.
     </p>
   </header>

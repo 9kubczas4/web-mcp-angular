@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 
-import { ProductService } from '../../core/catalog/product.service';
-import { err, ok, type StructuredResponse } from '../../core/webmcp/structured-response';
+import { ProductsFilterService } from './products-filter.service';
+import { err, type StructuredResponse } from '../../core/webmcp/structured-response';
 import type { JsonSchema } from '../../core/webmcp/tool-descriptor';
 import { validate } from '../../core/webmcp/validate';
 
@@ -42,11 +42,10 @@ export const filterProductsTool = {
     if (!result.ok) {
       return err('validation', result.message, result.details);
     }
-    const productService = inject(ProductService);
-    const matches = productService.filter({
+    const filterService = inject(ProductsFilterService);
+    return filterService.applyFilter({
       category: args.category ?? null,
       maxPrice: args.maxPrice ?? null,
     });
-    return ok({ matches });
   },
 } as const;

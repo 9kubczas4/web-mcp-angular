@@ -3,6 +3,7 @@ import type { Routes } from '@angular/router';
 
 import { ROUTE_SEGMENT } from './app.route-paths';
 import { exportReportTool } from './pages/dashboard/dashboard.tools';
+import { ProductsFilterService } from './pages/products/products-filter.service';
 import { filterProductsTool } from './pages/products/products.tools';
 
 /**
@@ -21,7 +22,10 @@ export const APP_ROUTES: Routes = [
     path: ROUTE_SEGMENT.products,
     loadComponent: () =>
       import('./pages/products/products.component').then((m) => m.ProductsComponent),
-    providers: [provideExperimentalWebMcpTools([filterProductsTool])],
+    providers: [
+      ProductsFilterService,
+      provideExperimentalWebMcpTools([filterProductsTool]),
+    ],
   },
   {
     path: ROUTE_SEGMENT.dashboard,

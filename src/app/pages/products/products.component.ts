@@ -1,17 +1,10 @@
 import { DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+
 import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-  type Signal,
-} from '@angular/core';
-
-import { ProductService } from '../../core/catalog/product.service';
-import type { Product } from '../../core/catalog/product';
-
-type ProductCategory = 'audio' | 'wearable' | 'home' | 'office';
+  ProductsFilterService,
+  type ProductCategory,
+} from './products-filter.service';
 
 /**
  * Static option list backing the category `<select>`. Kept in lockstep
@@ -26,8 +19,8 @@ const CATEGORY_OPTIONS: readonly ProductCategory[] = [
 
 /**
  * Products page (`/products`). The UI filters mirror the route-scoped
- * `filterProducts` tool's schema, so both the UI and the tool drive the
- * same `ProductService.filter` call.
+ * `filterProducts` tool's schema and share `ProductsFilterService` state
+ * so tool invocations update the visible catalog and filter controls.
  */
 @Component({
   selector: 'app-products',
@@ -37,20 +30,15 @@ const CATEGORY_OPTIONS: readonly ProductCategory[] = [
   styleUrl: './products.component.css',
 })
 export class ProductsComponent {
-  private readonly productService = inject(ProductService);
+  private readonly filterService = inject(ProductsFilterService);
 
   protected readonly categoryOptions = CATEGORY_OPTIONS;
 
-  protected readonly category = signal<ProductCategory | null>(null);
+  protected readonly category = this.filterService.category;
 
-  protected readonly maxPrice = signal<number | null>(null);
+  protected readonly maxPrice = this.filterService.maxPrice;
 
-  protected readonly visibleProducts: Signal<readonly Product[]> = computed(() =>
-    this.productService.filter({
-      category: this.category(),
-      maxPrice: this.maxPrice(),
-    }),
-  );
+  protected readonly visibleProducts = this.filterService.visibleProducts;
 
   /**
    * `(input)` handler for the category `<select>`. Maps the empty string
@@ -58,11 +46,11 @@ export class ProductsComponent {
    */
   protected onCategoryChange(raw: string): void {
     if (raw === '') {
-      this.category.set(null);
+      this.filterService.setCategory(null);
       return;
     }
     if (CATEGORY_OPTIONS.includes(raw as ProductCategory)) {
-      this.category.set(raw as ProductCategory);
+      this.filterService.setCategory(raw as ProductCategory);
     }
   }
 
@@ -72,17 +60,16 @@ export class ProductsComponent {
    */
   protected onMaxPriceChange(raw: string): void {
     if (raw.trim() === '') {
-      this.maxPrice.set(null);
+      this.filterService.setMaxPrice(null);
       return;
     }
     const parsed = Number(raw);
     if (Number.isFinite(parsed) && parsed >= 0) {
-      this.maxPrice.set(parsed);
+      this.filterService.setMaxPrice(parsed);
     }
   }
 
   protected reset(): void {
-    this.category.set(null);
-    this.maxPrice.set(null);
+    this.filterService.reset();
   }
 }

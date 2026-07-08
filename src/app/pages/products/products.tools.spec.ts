@@ -2,14 +2,26 @@
 import '@mcp-b/webmcp-polyfill';
 
 import { provideLocationMocks } from '@angular/common/testing';
-import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter, withExperimentalAutoCleanupInjectors } from '@angular/router';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { Router, RouterOutlet, provideRouter, withExperimentalAutoCleanupInjectors } from '@angular/router';
 import type { ModelContextCore } from '@mcp-b/webmcp-types';
 
 import fc from 'fast-check';
 
 import { APP_ROUTES } from '../../app.routes';
 import { isStructuredResponse } from '../../core/webmcp/structured-response';
+import { ProductsFilterService } from './products-filter.service';
+import { ProductsComponent } from './products.component';
+
+@Component({
+  selector: 'app-test-router-shell',
+  imports: [RouterOutlet],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `<router-outlet />`,
+})
+class RouterShellHost {}
 
 interface ModelContextTestingShim {
   executeTool(toolName: string, inputArgsJson: string): Promise<string | null>;
@@ -189,5 +201,48 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
       }),
       { numRuns: 100 },
     );
+  });
+
+  it('updates ProductsFilterService state so the UI reflects tool-driven filters', async () => {
+    const shim = getTestingShim();
+    const fixture: ComponentFixture<RouterShellHost> =
+      TestBed.createComponent(RouterShellHost);
+    fixture.detectChanges();
+
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/products');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const productsDe = fixture.debugElement.query(By.directive(ProductsComponent));
+    expect(productsDe).not.toBeNull();
+    const filterService = productsDe!.injector.get(ProductsFilterService);
+
+    expect(filterService.maxPrice()).toBeNull();
+    expect(filterService.visibleProducts().length).toBe(8);
+
+    const raw = await shim.executeTool(
+      'filterProducts',
+      JSON.stringify({ maxPrice: 100 }),
+    );
+    expect(raw).not.toBeNull();
+    const envelope = JSON.parse(raw as string) as CallToolResultEnvelope;
+    expect(isStructuredResponse(envelope.structuredContent)).toBe(true);
+    const response = envelope.structuredContent as {
+      status: 'success' | 'error';
+      payload: { matches?: { id: string }[] };
+    };
+    expect(response.status).toBe('success');
+    expect(response.payload.matches?.map((p) => p.id).sort()).toEqual([
+      'aud-002',
+      'hom-001',
+    ]);
+
+    expect(filterService.maxPrice()).toBe(100);
+    expect(filterService.category()).toBeNull();
+    expect(filterService.visibleProducts().map((p) => p.id).sort()).toEqual([
+      'aud-002',
+      'hom-001',
+    ]);
   });
 });
