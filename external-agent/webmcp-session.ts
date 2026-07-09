@@ -89,7 +89,6 @@ export class WebMcpSession {
     }
 
     const normalizedArgs = normalizeToolArguments(
-      name,
       args,
       tool.inputSchema ?? null,
     );

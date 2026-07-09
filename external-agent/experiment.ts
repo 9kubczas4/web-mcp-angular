@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
 
-import { DEMO_ORIGIN } from './demo-site.js';
+import { resolveSiteUrl } from './site-url.js';
 
 const browser = await puppeteer.launch({
   channel: 'chrome-canary',
@@ -8,7 +8,10 @@ const browser = await puppeteer.launch({
 });
 
 const page = await browser.newPage();
-await page.goto(DEMO_ORIGIN);
+const url = resolveSiteUrl();
+await page.goto(url);
+
+console.log(`Open: ${url}`);
 
 const tools = page.webmcp.tools();
 
@@ -16,10 +19,4 @@ for (const tool of tools) {
   console.log(tool.name, tool.description, tool.inputSchema);
 }
 
-const tool = tools.find(t => t.name === 'searchProducts');
-
-const result = await tool?.execute({
-  query: 'headphones',
-});
-
-console.log(result);
+await browser.close();

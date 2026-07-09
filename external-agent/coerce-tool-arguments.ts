@@ -52,16 +52,8 @@ export function coerceToolArguments(
 }
 
 export function normalizeToolArguments(
-  toolName: string,
   args: Record<string, unknown>,
   schema: JsonSchemaObject | null | undefined,
 ): Record<string, unknown> {
-  const coerced = coerceToolArguments(args, schema);
-
-  if (toolName === 'filterProducts' && coerced['maxPrice'] === 0) {
-    const { maxPrice: _ignored, ...rest } = coerced;
-    return rest;
-  }
-
-  return coerced;
+  return coerceToolArguments(args, schema);
 }

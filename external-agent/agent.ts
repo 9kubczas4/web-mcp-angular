@@ -1,57 +1,60 @@
 import { LlmAgent, type ReadonlyContext } from '@google/adk';
 
-import { DEMO_ORIGIN } from './demo-site.js';
+import { resolveSiteUrl } from './site-url.js';
 import { resolveAgentModel } from './model.js';
+import { enforceToolBudget, toolBudgetLimits } from './tool-budget.js';
 import { webMcpTools } from './webmcp-tools.js';
 
+const DEFAULT_SITE = resolveSiteUrl();
 const TOOL_NAMES = webMcpTools.map((tool) => tool.name).join(', ');
+const { maxInvokes, maxList } = toolBudgetLimits();
 
 function buildInstruction(_context: ReadonlyContext): string {
-  return `You are the shopping assistant for ${DEMO_ORIGIN}. You have zero catalog knowledge without tools.
+  return `You are a WebMCP browser agent. You interact with web pages that expose tools via navigator.modelContext.
+
+Default site (when the user gives no URL): ${DEFAULT_SITE}
+Override with WEBMCP_URL in the environment or by passing url to tools.
 
 TOOLS (only these): ${TOOL_NAMES}
 
+WORKFLOW
+
+1. User gives a URL → open_web_page (or pass url to list/invoke tools).
+2. No URL → use the default site above.
+3. list_webmcp_tools once to discover tool names and inputSchema.
+4. invoke_webmcp_tool at most once per tool name with the best single argument set.
+5. Answer the user from those results.
+6. close_browser when the session is no longer needed.
+
+TOOL BUDGET (hard limits — exceeding them returns an error)
+
+- list_webmcp_tools: max ${maxList} call per user message.
+- invoke_webmcp_tool: max ${maxInvokes} calls per user message.
+- Each page tool name (e.g. searchProducts) may be invoked at most once per user message.
+- Never sweep parameters (no trying many queries, price ranges, or categories in a loop).
+- Pick one tool and one argument set that best matches the user request.
+- If the result is empty or insufficient → tell the user; do not retry with other parameters.
+
 BEHAVIOUR
 
-- Product or cart questions → call invoke_webmcp_tool BEFORE any factual answer.
+- Answer factual questions only after calling invoke_webmcp_tool.
 - Never mention JSON, function-call format, or internal tools to the user.
-- Never refuse a clear shopping question. Never answer in English if the user writes Polish.
-- Incomplete message (e.g. "jakie s") → one short Polish clarification question only; no lecture.
+- Match the user's language.
+- Incomplete message → one short clarification question only.
 
 GROUNDING
 
-- Facts only from the latest invoke_webmcp_tool result (status, payload.matches, payload.items).
-- List only products present in matches. Sort or filter in your answer, but do not add items.
-- Empty matches → say no products found. Do not invent alternatives.
-
-RECIPES
-
-- Cheapest / najtańsze produkty:
-  invoke_webmcp_tool filterProducts on route products with empty arguments,
-  then pick the lowest price from payload.matches.
-
-- Price limit (e.g. do 200 zł):
-  invoke_webmcp_tool filterProducts with maxPrice 200 (USD in this demo).
-
-- Search by name:
-  invoke_webmcp_tool searchProducts with query.
-
-- Cart:
-  getCartSummary or addToCart.
-
-FINAL ANSWER FORMAT (after tool data)
-
-Polish example for cheapest:
-"Najtańszy produkt: Smart Plant Sensor (hom-001), 39 USD."
-
-Never fabricate prices. Never use zł unless converting explicitly from returned USD.`;
+- Facts only from invoke_webmcp_tool results already obtained this turn.
+- Empty or missing data → say nothing was found. Do not invent content.
+- If a tool is missing on the current page, ask the user for the correct page URL.`;
 }
 
 export const rootAgent = new LlmAgent({
   name: 'webmcp_browser_agent',
   model: resolveAgentModel(),
   description:
-    'Calls WebMCP tools on the demo catalog and answers only from returned data.',
+    'Browses WebMCP-enabled pages and answers only from tool results.',
   instruction: buildInstruction,
+  beforeToolCallback: enforceToolBudget,
   tools: [...webMcpTools],
 });

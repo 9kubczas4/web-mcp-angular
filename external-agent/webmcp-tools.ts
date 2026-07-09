@@ -1,13 +1,7 @@
 import { FunctionTool } from '@google/adk';
 import { z } from 'zod';
 
-import {
-  DEMO_ORIGIN,
-  DEMO_ROUTES,
-  demoUrl,
-  routeForTool,
-  type DemoRoute,
-} from './demo-site.js';
+import { normalizeSiteUrl, resolveSiteUrl } from './site-url.js';
 import { webMcpSession } from './webmcp-session.js';
 
 function parseToolArguments(raw: unknown): Record<string, unknown> {
@@ -30,28 +24,61 @@ function parseToolArguments(raw: unknown): Record<string, unknown> {
   throw new Error('arguments must be a JSON object');
 }
 
-async function openDemoRoute(route: DemoRoute): Promise<string> {
-  const url = demoUrl(route);
+function resolvePageUrl(url?: string): string {
+  if (url?.trim()) {
+    return normalizeSiteUrl(url);
+  }
+
+  const current = webMcpSession.getCurrentUrl();
+  if (current) {
+    return current;
+  }
+
+  return resolveSiteUrl();
+}
+
+async function openPage(url: string): Promise<string> {
   await webMcpSession.ensureOpen(url);
   return url;
 }
 
-export const listWebMcpToolsTool = new FunctionTool({
-  name: 'list_webmcp_tools',
-  description: `List WebMCP tools on ${DEMO_ORIGIN} with name, description, and inputSchema.`,
+const optionalUrlSchema = z
+  .string()
+  .optional()
+  .describe(
+    'Full page URL with WebMCP. Omit to use the open page, WEBMCP_URL env, or the default site.',
+  );
+
+export const openWebPageTool = new FunctionTool({
+  name: 'open_web_page',
+  description:
+    'Open a WebMCP-enabled page in the browser. Required when switching sites or paths.',
   parameters: z.object({
-    route: z
-      .enum(DEMO_ROUTES)
-      .optional()
-      .describe('Demo route: home, products, dashboard, cart, contact. Default home.'),
+    url: optionalUrlSchema,
   }),
-  execute: async ({ route = 'home' }) => {
-    const url = await openDemoRoute(route);
+  execute: async ({ url }) => {
+    const targetUrl = await openPage(resolvePageUrl(url));
 
     return {
-      site: DEMO_ORIGIN,
-      route,
-      url,
+      url: targetUrl,
+      count: webMcpSession.listTools().length,
+      tools: webMcpSession.listTools().map((tool) => tool.name),
+    };
+  },
+});
+
+export const listWebMcpToolsTool = new FunctionTool({
+  name: 'list_webmcp_tools',
+  description:
+    'List WebMCP tools on a page with name, description, and inputSchema. Opens the page when needed.',
+  parameters: z.object({
+    url: optionalUrlSchema,
+  }),
+  execute: async ({ url }) => {
+    const targetUrl = await openPage(resolvePageUrl(url));
+
+    return {
+      url: targetUrl,
       count: webMcpSession.listTools().length,
       tools: webMcpSession.listTools(),
     };
@@ -60,21 +87,22 @@ export const listWebMcpToolsTool = new FunctionTool({
 
 export const invokeWebMcpToolTool = new FunctionTool({
   name: 'invoke_webmcp_tool',
-  description: `Invoke a WebMCP tool on ${DEMO_ORIGIN}. Use list_webmcp_tools first for tool_name and inputSchema.`,
+  description:
+    'Invoke a WebMCP tool by name. Use list_webmcp_tools first for tool_name and inputSchema.',
   parameters: z.object({
     tool_name: z.string().describe('Exact tool name from list_webmcp_tools'),
     arguments: z
       .record(z.string(), z.unknown())
-      .describe('Arguments matching inputSchema (e.g. filterProducts: maxPrice, category)'),
+      .describe('Arguments matching inputSchema'),
+    url: optionalUrlSchema,
   }),
-  execute: async ({ tool_name, arguments: args }) => {
-    const url = await openDemoRoute(routeForTool(tool_name));
+  execute: async ({ tool_name, arguments: args, url }) => {
+    const targetUrl = await openPage(resolvePageUrl(url));
     const parsedArgs = parseToolArguments(args);
     const result = await webMcpSession.invokeTool(tool_name, parsedArgs);
 
     return {
-      site: DEMO_ORIGIN,
-      url,
+      url: targetUrl,
       ...result,
     };
   },
@@ -82,7 +110,7 @@ export const invokeWebMcpToolTool = new FunctionTool({
 
 export const closeBrowserTool = new FunctionTool({
   name: 'close_browser',
-  description: 'Close the demo browser session when finished.',
+  description: 'Close the browser session when finished.',
   parameters: z.object({}),
   execute: async () => {
     await webMcpSession.close();
@@ -90,4 +118,9 @@ export const closeBrowserTool = new FunctionTool({
   },
 });
 
-export const webMcpTools = [listWebMcpToolsTool, invokeWebMcpToolTool, closeBrowserTool] as const;
+export const webMcpTools = [
+  openWebPageTool,
+  listWebMcpToolsTool,
+  invokeWebMcpToolTool,
+  closeBrowserTool,
+] as const;
