@@ -13,9 +13,12 @@
     "format:check": "prettier --check .",
     "deploy": "ng build --configuration production && firebase deploy --only hosting",
     "deploy:only": "firebase deploy --only hosting",
-    "external-agent:build": "tsc -p tsconfig.external-agent.json && cp external-agent/package.json dist/external-agent/package.json",
-    "external-agent:start": "node dist/external-agent/sample.js",
-    "external-agent": "npm run external-agent:build && npm run external-agent:start"
+    "experiment:build": "tsc -p tsconfig.external-agent.json && cp external-agent/package.json dist/external-agent/package.json",
+    "experiment:start": "node dist/external-agent/experiment.js",
+    "external-agent:build": "npm run experiment:build",
+    "external-agent": "npm run external-agent:agent",
+    "external-agent:agent": "npx adk run external-agent/agent.ts",
+    "external-agent:web": "npx adk web external-agent"
   },
   "private": true,
   "packageManager": "npm@10.9.8",
@@ -29,15 +32,20 @@
     "@angular/forms": "^22.0.0-next.0",
     "@angular/platform-browser": "^22.0.0-next.0",
     "@angular/router": "^22.0.0-next.0",
+    "@google/adk": "^1.3.0",
     "@mcp-b/webmcp-polyfill": "^2.3.2",
+    "@yagolopez/adk-utils": "^0.2.7",
+    "ollama": "^0.6.3",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@angular/build": "^22.0.0-rc.1",
     "@angular/cli": "^22.0.0-rc.1",
     "@angular/compiler-cli": "^22.0.0-next.0",
     "@eslint/js": "^10.0.1",
+    "@google/adk-devtools": "^1.3.0",
     "@types/node": "^25.9.1",
     "angular-eslint": "^21.4.0",
     "eslint": "^10.4.0",
