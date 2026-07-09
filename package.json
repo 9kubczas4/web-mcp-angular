@@ -12,7 +12,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "deploy": "ng build --configuration production && firebase deploy --only hosting",
-    "deploy:only": "firebase deploy --only hosting"
+    "deploy:only": "firebase deploy --only hosting",
+    "external-agent:build": "tsc -p tsconfig.external-agent.json && cp external-agent/package.json dist/external-agent/package.json",
+    "external-agent:start": "node dist/external-agent/sample.js",
+    "external-agent": "npm run external-agent:build && npm run external-agent:start"
   },
   "private": true,
   "packageManager": "npm@10.9.8",
@@ -43,6 +46,7 @@
     "fast-check": "^4.8.0",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
+    "puppeteer": "^25.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.4",
     "vitest": "^4.0.8"
