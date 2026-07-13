@@ -1,6 +1,3 @@
-/** Fallback when neither a tool url argument nor WEBMCP_URL is set. */
-export const DEFAULT_SITE_URL = 'https://webmcp-angular-demo.web.app';
-
 /** Normalizes a user- or env-provided URL (adds https when missing). */
 export function normalizeSiteUrl(url: string): string {
   const trimmed = url.trim();
@@ -12,7 +9,7 @@ export function normalizeSiteUrl(url: string): string {
 
 /**
  * Resolves the target page URL.
- * Priority: explicit argument → WEBMCP_URL env → DEFAULT_SITE_URL.
+ * Priority: explicit argument → WEBMCP_URL env.
  */
 export function resolveSiteUrl(explicitUrl?: string): string {
   if (explicitUrl?.trim()) {
@@ -24,5 +21,7 @@ export function resolveSiteUrl(explicitUrl?: string): string {
     return normalizeSiteUrl(fromEnv);
   }
 
-  return DEFAULT_SITE_URL;
+  throw new Error(
+    'WEBMCP_URL is not set. Set it in the environment or pass a url argument to the tool.',
+  );
 }

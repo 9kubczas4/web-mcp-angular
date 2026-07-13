@@ -1,4 +1,4 @@
-import type { JsonSchemaObject } from './webmcp-types.js';
+import type { JsonSchemaObject } from '../types/webmcp.js';
 
 function coerceValue(value: unknown, schema: JsonSchemaObject | undefined): unknown {
   if (value === undefined || value === null || !schema?.type) {

@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
 
-import { resolveSiteUrl } from './site-url.js';
+import { resolveSiteUrl } from '../utils/site-url.js';
 
 const browser = await puppeteer.launch({
   channel: 'chrome-canary',

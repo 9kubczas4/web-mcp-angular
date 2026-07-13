@@ -1,7 +1,7 @@
 import puppeteer, { type Browser, type Page } from 'puppeteer';
 
-import { normalizeToolArguments } from './coerce-tool-arguments.js';
-import type { JsonSchemaObject, WebMcpToolDescriptor } from './webmcp-types.js';
+import { normalizeToolArguments } from '../utils/coerce-tool-arguments.js';
+import type { JsonSchemaObject, WebMcpToolDescriptor } from '../types/webmcp.js';
 
 interface WebMcpToolHandle {
   readonly name: string;

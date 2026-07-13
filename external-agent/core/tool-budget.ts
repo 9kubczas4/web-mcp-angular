@@ -1,4 +1,4 @@
-import type { Context } from '@google/adk';
+import type { ToolContext } from '@google/adk';
 
 const DEFAULT_MAX_INVOKES = 3;
 const DEFAULT_MAX_LIST = 1;
@@ -53,7 +53,7 @@ export function enforceToolBudget({
 }: {
   tool: { name: string };
   args: Record<string, unknown>;
-  context: Context;
+  context: ToolContext;
 }): Record<string, unknown> | undefined {
   const maxInvokes = parseLimit(process.env['WEBMCP_MAX_INVOKES'], DEFAULT_MAX_INVOKES);
   const maxList = parseLimit(process.env['WEBMCP_MAX_LIST_TOOLS'], DEFAULT_MAX_LIST);

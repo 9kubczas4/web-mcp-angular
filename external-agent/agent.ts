@@ -1,19 +1,19 @@
-import { LlmAgent, type ReadonlyContext } from '@google/adk';
+import { LlmAgent } from '@google/adk';
 
-import { resolveSiteUrl } from './site-url.js';
-import { resolveAgentModel } from './model.js';
-import { enforceToolBudget, toolBudgetLimits } from './tool-budget.js';
-import { webMcpTools } from './webmcp-tools.js';
+import { enforceToolBudget, toolBudgetLimits } from './core/tool-budget.js';
+import { resolveAgentModel } from './llm/model.js';
+import { webMcpTools } from './tools/webmcp-tools.js';
+import { resolveSiteUrl } from './utils/site-url.js';
 
 const DEFAULT_SITE = resolveSiteUrl();
 const TOOL_NAMES = webMcpTools.map((tool) => tool.name).join(', ');
 const { maxInvokes, maxList } = toolBudgetLimits();
 
-function buildInstruction(_context: ReadonlyContext): string {
+function buildInstruction(): string {
   return `You are a WebMCP browser agent. You interact with web pages that expose tools via navigator.modelContext.
 
-Default site (when the user gives no URL): ${DEFAULT_SITE}
-Override with WEBMCP_URL in the environment or by passing url to tools.
+Default site (from WEBMCP_URL when the user gives no URL): ${DEFAULT_SITE}
+Override by passing url to tools.
 
 TOOLS (only these): ${TOOL_NAMES}
 

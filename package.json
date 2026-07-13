@@ -14,7 +14,7 @@
     "deploy": "ng build --configuration production && firebase deploy --only hosting",
     "deploy:only": "firebase deploy --only hosting",
     "experiment:build": "tsc -p tsconfig.external-agent.json && cp external-agent/package.json dist/external-agent/package.json",
-    "experiment:start": "node dist/external-agent/experiment.js",
+    "experiment:start": "node dist/external-agent/scripts/experiment.js",
     "external-agent:build": "npm run experiment:build",
     "external-agent": "npm run external-agent:agent",
     "external-agent:agent": "npx adk run external-agent/agent.ts",

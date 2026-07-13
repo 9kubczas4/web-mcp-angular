@@ -1,8 +1,8 @@
 import { FunctionTool } from '@google/adk';
 import { z } from 'zod';
 
-import { normalizeSiteUrl, resolveSiteUrl } from './site-url.js';
-import { webMcpSession } from './webmcp-session.js';
+import { webMcpSession } from '../core/webmcp-session.js';
+import { normalizeSiteUrl, resolveSiteUrl } from '../utils/site-url.js';
 
 function parseToolArguments(raw: unknown): Record<string, unknown> {
   if (raw === null || raw === undefined) {
@@ -46,7 +46,7 @@ const optionalUrlSchema = z
   .string()
   .optional()
   .describe(
-    'Full page URL with WebMCP. Omit to use the open page, WEBMCP_URL env, or the default site.',
+    'Full page URL with WebMCP. Omit to use the open page or WEBMCP_URL env.',
   );
 
 export const openWebPageTool = new FunctionTool({
