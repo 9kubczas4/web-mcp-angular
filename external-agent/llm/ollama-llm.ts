@@ -1,6 +1,28 @@
 import { BaseLlm, type LlmRequest, type LlmResponse } from '@google/adk';
 import { Ollama, type Message, type Tool } from 'ollama';
 
+interface FunctionDeclarationLike {
+  name?: string;
+  description?: string;
+  parameters?: unknown;
+}
+
+interface ToolConfigLike {
+  functionDeclarations?: FunctionDeclarationLike[];
+  function_declarations?: FunctionDeclarationLike[];
+}
+
+interface ContentPartLike {
+  text?: string;
+  functionCall?: {
+    name?: string;
+    args?: Record<string, unknown>;
+  };
+  functionResponse?: {
+    response?: unknown;
+  };
+}
+
 function normalizeOllamaHost(raw: string): string {
   return raw.replace(/\/v1\/?$/, '');
 }
@@ -39,7 +61,8 @@ function sanitizeSchema(schema: unknown): unknown {
 }
 
 function toOllamaTools(llmRequest: LlmRequest): Tool[] | undefined {
-  const declarations = (llmRequest.config?.tools ?? []).flatMap((toolConfig) => {
+  const toolConfigs = (llmRequest.config?.tools ?? []) as ToolConfigLike[];
+  const declarations = toolConfigs.flatMap((toolConfig): FunctionDeclarationLike[] => {
     if (typeof toolConfig !== 'object' || toolConfig === null) {
       return [];
     }
@@ -56,7 +79,10 @@ function toOllamaTools(llmRequest: LlmRequest): Tool[] | undefined {
   });
 
   const tools = declarations
-    .filter((decl) => typeof decl.name === 'string' && decl.name.length > 0)
+    .filter(
+      (decl): decl is FunctionDeclarationLike & { name: string } =>
+        typeof decl.name === 'string' && decl.name.length > 0,
+    )
     .map((decl) => ({
       type: 'function' as const,
       function: {
@@ -72,7 +98,7 @@ function toOllamaTools(llmRequest: LlmRequest): Tool[] | undefined {
 function toOllamaMessages(contents: LlmRequest['contents']): Message[] {
   return contents.flatMap((content) => {
     const role = content.role === 'model' ? 'assistant' : (content.role ?? 'user');
-    const parts = content.parts ?? [];
+    const parts = (content.parts ?? []) as ContentPartLike[];
     const toolCallParts = parts.filter((part) => 'functionCall' in part);
     const functionResponseParts = parts.filter((part) => 'functionResponse' in part);
     const textParts = parts
