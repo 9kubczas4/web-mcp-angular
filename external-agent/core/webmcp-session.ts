@@ -21,6 +21,34 @@ const WEBMCP_LAUNCH_OPTIONS = {
   args: ['--enable-features=WebMCP'],
 };
 
+interface PuppeteerToolResult {
+  status?: string;
+  output?: unknown;
+  errorText?: string;
+  exception?: unknown;
+}
+
+/** Puppeteer WebMCP returns call metadata; keep only the page tool payload. */
+function sanitizeToolResult(result: unknown): unknown {
+  if (!result || typeof result !== 'object') {
+    return result;
+  }
+
+  const record = result as PuppeteerToolResult;
+  if (record.output !== undefined) {
+    return record.output;
+  }
+
+  if (record.errorText || record.exception) {
+    return {
+      status: 'error',
+      message: record.errorText ?? String(record.exception),
+    };
+  }
+
+  return result;
+}
+
 /**
  * Manages a single Puppeteer browser tab with WebMCP enabled. Shared by ADK
  * tools so listing and invoking page tools operate on the same session.
@@ -89,8 +117,8 @@ export class WebMcpSession {
     }
 
     const normalizedArgs = normalizeToolArguments(args, tool.inputSchema ?? null);
-    const result = await tool.execute(normalizedArgs);
-    return { tool: name, result };
+    const rawResult = await tool.execute(normalizedArgs);
+    return { tool: name, result: sanitizeToolResult(rawResult) };
   }
 
   async close(): Promise<void> {

@@ -1,8 +1,44 @@
 import { FunctionTool } from '@google/adk';
-import { z } from 'zod';
+import { Type, type Schema } from '@google/genai';
 
 import { webMcpSession } from '../core/webmcp-session.js';
 import { normalizeSiteUrl, resolveSiteUrl } from '../utils/site-url.js';
+
+// ADK's FunctionTool only converts Zod v3 schemas. With Zod v4 (required by Angular),
+// pass Gemini Schema objects directly to avoid leaking internal `def` fields to the API.
+const optionalUrlProperty: Schema = {
+  type: Type.STRING,
+  description:
+    'Full page URL with WebMCP. Omit to use the open page or WEBMCP_URL env.',
+};
+
+const optionalUrlParameters: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    url: optionalUrlProperty,
+  },
+};
+
+const invokeWebMcpToolParameters: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    tool_name: {
+      type: Type.STRING,
+      description: 'Exact tool name from list_webmcp_tools',
+    },
+    arguments: {
+      type: Type.OBJECT,
+      description: 'Arguments matching inputSchema',
+    },
+    url: optionalUrlProperty,
+  },
+  required: ['tool_name', 'arguments'],
+};
+
+const emptyParameters: Schema = {
+  type: Type.OBJECT,
+  properties: {},
+};
 
 function parseToolArguments(raw: unknown): Record<string, unknown> {
   if (raw === null || raw === undefined) {
@@ -42,19 +78,13 @@ async function openPage(url: string): Promise<string> {
   return url;
 }
 
-const optionalUrlSchema = z
-  .string()
-  .optional()
-  .describe('Full page URL with WebMCP. Omit to use the open page or WEBMCP_URL env.');
-
 export const listWebMcpToolsTool = new FunctionTool({
   name: 'list_webmcp_tools',
   description:
     'Open a WebMCP-enabled page and list its tools with name, description, and inputSchema. Pass url when switching sites or paths.',
-  parameters: z.object({
-    url: optionalUrlSchema,
-  }),
-  execute: async ({ url }) => {
+  parameters: optionalUrlParameters,
+  execute: async (input) => {
+    const { url } = input as { url?: string };
     const targetUrl = await openPage(resolvePageUrl(url));
 
     return {
@@ -69,12 +99,13 @@ export const invokeWebMcpToolTool = new FunctionTool({
   name: 'invoke_webmcp_tool',
   description:
     'Invoke a WebMCP tool by name. Use list_webmcp_tools first for tool_name and inputSchema.',
-  parameters: z.object({
-    tool_name: z.string().describe('Exact tool name from list_webmcp_tools'),
-    arguments: z.record(z.string(), z.unknown()).describe('Arguments matching inputSchema'),
-    url: optionalUrlSchema,
-  }),
-  execute: async ({ tool_name, arguments: args, url }) => {
+  parameters: invokeWebMcpToolParameters,
+  execute: async (input) => {
+    const { tool_name, arguments: args, url } = input as {
+      tool_name: string;
+      arguments?: unknown;
+      url?: string;
+    };
     const targetUrl = await openPage(resolvePageUrl(url));
     const parsedArgs = parseToolArguments(args);
     const result = await webMcpSession.invokeTool(tool_name, parsedArgs);
@@ -89,7 +120,7 @@ export const invokeWebMcpToolTool = new FunctionTool({
 export const closeBrowserTool = new FunctionTool({
   name: 'close_browser',
   description: 'Close the browser session when finished.',
-  parameters: z.object({}),
+  parameters: emptyParameters,
   execute: async () => {
     await webMcpSession.close();
     return { status: 'closed' };

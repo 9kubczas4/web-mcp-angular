@@ -3,7 +3,10 @@ import { LlmAgent } from '@google/adk';
 import { enforceToolBudget, toolBudgetLimits } from './core/tool-budget.js';
 import { resolveAgentModel } from './llm/model.js';
 import { webMcpTools } from './tools/webmcp-tools.js';
+import { registerProcessErrorLogging } from './utils/process-logging.js';
 import { resolveSiteUrl } from './utils/site-url.js';
+
+registerProcessErrorLogging();
 
 const DEFAULT_SITE = resolveSiteUrl();
 const TOOL_NAMES = webMcpTools.map((tool) => tool.name).join(', ');
@@ -24,11 +27,17 @@ WORKFLOW
 3. Answer the user from those results.
 4. close_browser when the session is no longer needed.
 
+PAGE TOOLS (discovered at runtime — never assume fixed names)
+
+- Rely only on list_webmcp_tools: use each tool's description and inputSchema to pick arguments.
+- Tools differ per page and route. If the current page lacks a suitable tool, pass a different url and list again.
+- Do not invent tool names or parameters that were not returned by list_webmcp_tools.
+
 TOOL BUDGET (hard limits — exceeding them returns an error)
 
 - list_webmcp_tools: max ${maxList} call per user message.
 - invoke_webmcp_tool: max ${maxInvokes} calls per user message.
-- Each page tool name (e.g. searchProducts) may be invoked at most once per user message.
+- Each page tool name may be invoked at most once per user message.
 - Never sweep parameters (no trying many queries, price ranges, or categories in a loop).
 - Pick one tool and one argument set that best matches the user request.
 - If the result is empty or insufficient → tell the user; do not retry with other parameters.
