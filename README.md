@@ -1,58 +1,209 @@
 # webmcp-angular-demo
 
-A small Angular 22 (next) application that demonstrates every WebMCP integration scope the Angular framework currently exposes: a global tool registered at the application root, route-scoped tools registered through `Route.providers`, service-scoped tools registered from inside a service constructor, and a form-scoped tool produced by the new Signal Forms `form()` API. The demo intentionally has no in-app inspector or manual invoker — Chrome's WebMCP devtools extension already provides both surfaces against `navigator.modelContext`.
+A small Angular 22 application that demonstrates every WebMCP integration scope the Angular framework currently exposes: a global tool at the application root, route-scoped tools via `Route.providers`, service-scoped tools from a service constructor, and a form-scoped tool from the Signal Forms `form()` API. A separate **external agent** (Google ADK + Puppeteer) can browse those pages and answer questions using only page tool results.
 
-## Prerequisites
+The demo intentionally has no in-app inspector or manual invoker — Chrome's WebMCP devtools extension already provides both surfaces against `navigator.modelContext`.
 
-- Node `>=22`. The workspace is pinned to `22.22.3` via [nvm](https://github.com/nvm-sh/nvm); run `nvm use 22.22.3` (or `nvm install 22.22.3` first time) before any npm command.
-- Angular CLI v22 next. Installed locally as a devDependency, no global install required — every command below uses `npm`/`npx`.
-
-## Setup
+## Quick start
 
 ```bash
+nvm use 22.22.3          # or nvm install 22.22.3
 npm install
+npm start                # Angular app at http://localhost:4200/
 ```
 
-## Development server
+To run the external agent against the local app:
 
 ```bash
-npm start
+cp .env.example .env     # set GEMINI_API_KEY and WEBMCP_URL=http://localhost:4200
+npm run external-agent   # ADK CLI, interactive
+# or
+npm run external-agent:web  # ADK web UI
 ```
 
-Runs `ng serve` and opens the app at `http://localhost:4200/`.
+Requires **Chrome Canary** with the WebMCP feature flag (used by Puppeteer).
 
-## Tests
+## Commands
 
-```bash
-npm test
+| Command | Description |
+| --- | --- |
+| `npm start` | Dev server (`ng serve`) at `http://localhost:4200/` |
+| `npm test` | Unit, integration, and property-based tests (Vitest) |
+| `npm run lint` | ESLint with angular-eslint, max-warnings 0 |
+| `npm run lint:fix` | Auto-fix safe lint issues |
+| `npm run format` | Prettier write |
+| `npm run format:check` | Prettier verify |
+| `npm run build` | Production build |
+| `npm run deploy` | Build and deploy to Firebase Hosting |
+| `npm run external-agent` | Run the ADK agent CLI (`external-agent/agent.ts`) |
+| `npm run external-agent:web` | Run the ADK web UI for the agent |
+| `npm run experiment:build` | Compile the external-agent package to `dist/` |
+| `npm run experiment:start` | Minimal Puppeteer script that lists page tools |
+
+## Architecture
+
+The repository has two cooperating parts: an **Angular demo app** that registers WebMCP tools at different lifetimes, and an **external agent** that drives a real browser to discover and invoke those tools.
+
+```mermaid
+flowchart TB
+  subgraph UserSpace["User / operator"]
+    DevExt["Chrome WebMCP devtools extension"]
+    AgentUI["ADK CLI or web UI"]
+  end
+
+  subgraph Agent["external-agent/ — Google ADK"]
+    LLM["Gemini or Ollama"]
+    RootAgent["webmcp_browser_agent"]
+    AgentTools["list_webmcp_tools · invoke_webmcp_tool · close_browser"]
+    Budget["tool-budget enforcement"]
+    Session["WebMcpSession"]
+    RootAgent --> LLM
+    RootAgent --> AgentTools
+    RootAgent --> Budget
+    AgentTools --> Session
+  end
+
+  subgraph Browser["Chrome Canary — WebMCP enabled"]
+    Angular["Angular demo app"]
+    MC["navigator.modelContext"]
+    PageTools["Page tools\n(searchProducts, filterProducts, …)"]
+    Angular --> MC
+    MC --> PageTools
+  end
+
+  AgentUI --> RootAgent
+  DevExt --> MC
+  Session -->|"Puppeteer page.webmcp"| MC
+  PageTools -->|"StructuredResponse"| Session
 ```
 
-Runs `ng test`, which uses [Vitest](https://vitest.dev/) under the `@angular/build:unit-test` builder. The suite includes unit tests, end-to-end integration tests, and property-based tests (via `fast-check`) covering the six correctness properties from the design document.
+Design specs live in [`.kiro/specs/webmcp-angular-demo/`](.kiro/specs/webmcp-angular-demo/).
 
-## Lint and format
+### WebMCP tool scopes
 
-```bash
-npm run lint           # ESLint with angular-eslint, max-warnings 0
-npm run lint:fix       # auto-fix what's safe
-npm run format         # Prettier write
-npm run format:check   # Prettier verify
+Tools are registered at four lifetimes. Only tools whose scope is active on the current route appear in `navigator.modelContext`.
+
+```mermaid
+flowchart LR
+  subgraph Global["Global — always on"]
+    G["searchProducts\napp.config.ts"]
+  end
+
+  subgraph Route["Route — registered on enter,\nunregistered on leave"]
+    R1["filterProducts\n/products"]
+    R2["exportReport\n/dashboard"]
+  end
+
+  subgraph Service["Service — tied to injector lifetime"]
+    S1["getCartSummary"]
+    S2["addToCart\nCartService constructor"]
+  end
+
+  subgraph Form["Form — registered via form()"]
+    F["submitContactForm\n/contact"]
+  end
+
+  MC["navigator.modelContext"]
+
+  G --> MC
+  R1 --> MC
+  R2 --> MC
+  S1 --> MC
+  S2 --> MC
+  F --> MC
 ```
+
+The router uses `withExperimentalAutoCleanupInjectors()` so route-scoped providers (and their tools) are released when the user navigates away.
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  [*] --> Home: bootstrap
+  Home --> Products: /products
+  Products --> Dashboard: /dashboard
+  Dashboard --> Cart: /cart
+  Cart --> Contact: /contact
+
+  state Products {
+    [*] --> Active
+    note right of Active: filterProducts visible
+  }
+
+  state Dashboard {
+    [*] --> Active
+    note right of Active: exportReport visible\nfilterProducts gone
+  }
+
+  state Contact {
+    [*] --> Active
+    note right of Active: submitContactForm visible
+  }
+```
+
+`CartService` is `providedIn: 'root'` and materialized eagerly via `provideAppInitializer`, so its service-scoped tools are registered at bootstrap and remain available on every route.
+
+### External agent workflow
+
+The agent follows a strict, budgeted workflow: list page tools once, invoke at most once per page tool name, answer only from results, then close the browser.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant A as ADK agent
+  participant B as tool-budget
+  participant T as agent tools
+  participant P as WebMcpSession
+  participant W as Angular page
+
+  U->>A: question (+ optional URL)
+  A->>T: list_webmcp_tools(url?)
+  T->>B: check list budget
+  T->>P: ensureOpen(url)
+  P->>W: goto + page.webmcp.tools()
+  W-->>P: descriptors
+  P-->>A: names, descriptions, inputSchema
+
+  A->>T: invoke_webmcp_tool(name, args)
+  T->>B: check invoke budget + dedupe
+  T->>P: tool.execute(args)
+  P->>W: call registered page tool
+  W-->>P: StructuredResponse
+  P-->>A: sanitized result
+
+  A-->>U: grounded answer
+  A->>T: close_browser
+  T->>P: close()
+```
+
+Hard limits (configurable via `.env`) are enforced in code by `enforceToolBudget`, not only in the system prompt:
+
+| Limit | Default | Env variable |
+| --- | --- | --- |
+| `list_webmcp_tools` calls per user message | 1 | `WEBMCP_MAX_LIST_TOOLS` |
+| `invoke_webmcp_tool` calls per user message | 3 | `WEBMCP_MAX_INVOKES` |
+| Same page tool name per message | 1 | (always enforced) |
+
+LLM selection (`external-agent/llm/model.ts`):
+
+1. `ADK_MODEL=gemini-*` → Gemini (default model: `gemini-3.5-flash`)
+2. `ADK_MODEL=ollama` or `llama*` → local Ollama
+3. `GEMINI_API_KEY` set, no `ADK_MODEL` → Gemini
+4. Otherwise → Ollama `llama3.1`
 
 ## Demo tour
 
 Each route registers tools at a different scope. Open Chrome's WebMCP devtools extension and watch `navigator.modelContext` change as you navigate.
 
-| Route        | Tool(s)                       | Scope                                                  |
-| ------------ | ----------------------------- | ------------------------------------------------------ |
-| `/`          | (none)                        | overview page                                          |
-| `/products`  | `filterProducts`              | route-scoped (`Route.providers`)                       |
-| `/dashboard` | `exportReport`                | route-scoped (`Route.providers`)                       |
-| `/cart`      | `getCartSummary`, `addToCart` | service-scoped (`CartService` constructor)             |
-| `/contact`   | `submitContactForm`           | form-scoped (`form()` `experimentalWebMcpTool` option) |
+| Route | Tool(s) | Scope |
+| --- | --- | --- |
+| `/` | (none) | overview page |
+| `/products` | `filterProducts` | route-scoped (`Route.providers`) |
+| `/dashboard` | `exportReport` | route-scoped (`Route.providers`) |
+| `/cart` | `getCartSummary`, `addToCart` | service-scoped (`CartService` constructor) |
+| `/contact` | `submitContactForm` | form-scoped (`form()` `experimentalWebMcpTool` option) |
 
-The `searchProducts` tool is registered globally in `app.config.ts` and is therefore available on every route.
-
-`CartService` is `providedIn: 'root'` and is materialized eagerly via `provideAppInitializer` in `app.config.ts`, so its two service-scoped tools are also alive on every route — destruction-driven unregistration is exercised in the property tests by creating short-lived child injectors that own their own `CartService` instances.
+The `searchProducts` tool is registered globally in `app.config.ts` and is available on every route.
 
 ## Inspecting and invoking tools
 
@@ -71,16 +222,29 @@ The demo does not duplicate this UI inside the application.
 ## Project layout
 
 ```
-src/
-├── main.ts                                  # imports polyfill, then bootstraps
+src/                              # Angular demo application
+├── main.ts                       # polyfill import, then bootstrap
 └── app/
-    ├── app.config.ts                        # ApplicationConfig: router, global tool, forms
-    ├── app.routes.ts                        # Route table with route-level tool providers
-    ├── app.ts                               # Root shell with <router-outlet />
+    ├── app.config.ts             # router, global tool, forms, cart initializer
+    ├── app.routes.ts             # lazy routes + route-scoped tool providers
     ├── core/
-    │   ├── webmcp/                          # tool descriptor types, validate, structured-response, global-tools
-    │   └── catalog/                         # Product types and ProductService
-    ├── cart/                                # CartService and cart-line types
-    └── pages/
-        ├── home/, products/, dashboard/, cart/, contact/
+    │   ├── webmcp/               # descriptors, validate, structured-response
+    │   ├── catalog/              # ProductService
+    │   └── cart/                 # CartService + service-scoped tools
+    └── pages/                    # home, products, dashboard, cart, contact
+
+external-agent/                   # ADK browser agent
+├── agent.ts                      # LlmAgent definition + system prompt
+├── core/
+│   ├── webmcp-session.ts         # Puppeteer session (page.webmcp)
+│   └── tool-budget.ts            # per-message invoke/list limits
+├── tools/webmcp-tools.ts         # list, invoke, close agent tools
+└── llm/                          # Gemini / Ollama model resolution
 ```
+
+## Prerequisites
+
+- Node `>=22`. The workspace is pinned to `22.22.3` via [nvm](https://github.com/nvm-sh/nvm).
+- Angular CLI v22 — installed locally; use `npm` / `npx`, no global install required.
+- **Chrome Canary** for the external agent and experiment scripts (`--enable-features=WebMCP`).
+- For Gemini: `GEMINI_API_KEY` in `.env`. For local inference: Ollama with a compatible model.
