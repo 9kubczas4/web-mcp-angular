@@ -21,13 +21,10 @@ interface ModelContextTestingShim {
 }
 
 function getTestingShim(): ModelContextTestingShim {
-  const shim = (
-    navigator as Navigator & { modelContextTesting?: ModelContextTestingShim }
-  ).modelContextTesting;
+  const shim = (navigator as Navigator & { modelContextTesting?: ModelContextTestingShim })
+    .modelContextTesting;
   if (!shim) {
-    throw new Error(
-      'navigator.modelContextTesting was not installed by @mcp-b/webmcp-polyfill',
-    );
+    throw new Error('navigator.modelContextTesting was not installed by @mcp-b/webmcp-polyfill');
   }
   return shim;
 }
@@ -46,8 +43,7 @@ describe('Property 1: searchProducts always returns a Structured_Response', () =
     // Force the environment injector to materialize so the env initializer
     // registers the tool.
     TestBed.inject(EnvironmentInjector);
-    const ctx = (navigator as Navigator & { modelContext?: ModelContextCore })
-      .modelContext;
+    const ctx = (navigator as Navigator & { modelContext?: ModelContextCore }).modelContext;
     expect(ctx?.getTools().some((t) => t.name === 'searchProducts')).toBe(true);
   });
 

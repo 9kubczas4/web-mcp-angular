@@ -50,8 +50,7 @@ GROUNDING
 export const rootAgent = new LlmAgent({
   name: 'webmcp_browser_agent',
   model: resolveAgentModel(),
-  description:
-    'Browses WebMCP-enabled pages and answers only from tool results.',
+  description: 'Browses WebMCP-enabled pages and answers only from tool results.',
   instruction: buildInstruction,
   beforeToolCallback: enforceToolBudget,
   tools: [...webMcpTools],

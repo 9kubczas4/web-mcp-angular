@@ -3,9 +3,9 @@
     <h1 id="dashboard-title">Dashboard</h1>
     <p>
       This route registers the <code>exportReport</code> tool via
-      <code>provideExperimentalWebMcpTools</code> in its <code>providers</code> array. The
-      button below calls the same <code>runExport</code> helper the tool's handler uses, so
-      manual and tool-driven invocations produce identical responses.
+      <code>provideExperimentalWebMcpTools</code> in its <code>providers</code> array. The button
+      below calls the same <code>runExport</code> helper the tool's handler uses, so manual and
+      tool-driven invocations produce identical responses.
     </p>
   </header>
 
@@ -83,7 +83,8 @@
 
         @if (errorPayload(); as error) {
           <p class="result--error" role="alert">
-            <strong>{{ error.code }}</strong>: {{ error.message }}
+            <strong>{{ error.code }}</strong
+            >: {{ error.message }}
           </p>
         }
       </div>

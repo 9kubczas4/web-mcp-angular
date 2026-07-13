@@ -88,10 +88,7 @@ export class WebMcpSession {
       );
     }
 
-    const normalizedArgs = normalizeToolArguments(
-      args,
-      tool.inputSchema ?? null,
-    );
+    const normalizedArgs = normalizeToolArguments(args, tool.inputSchema ?? null);
     const result = await tool.execute(normalizedArgs);
     return { tool: name, result };
   }

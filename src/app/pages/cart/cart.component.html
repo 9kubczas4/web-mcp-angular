@@ -4,8 +4,8 @@
     <p>
       <code>CartService</code> registers the <code>getCartSummary</code> and
       <code>addToCart</code> tools from its constructor via
-      <code>declareExperimentalWebMcpTool</code>. The "Add demo item" button calls the same
-      handler the <code>addToCart</code> tool uses, so both paths stay semantically identical.
+      <code>declareExperimentalWebMcpTool</code>. The "Add demo item" button calls the same handler
+      the <code>addToCart</code> tool uses, so both paths stay semantically identical.
     </p>
   </header>
 
@@ -17,8 +17,7 @@
     <div class="summary-card__metric">
       <span class="summary-card__metric-label">Total</span>
       <span class="summary-card__metric-value"
-        >{{ total() | number: '1.2-2'
-        }}<span class="summary-card__currency">USD</span></span
+        >{{ total() | number: '1.2-2' }}<span class="summary-card__currency">USD</span></span
       >
     </div>
     <div class="summary-card__cta">
@@ -28,7 +27,8 @@
 
   @if (lastError(); as error) {
     <p class="alert" role="alert">
-      <strong>{{ error.code }}</strong>: {{ error.message }}
+      <strong>{{ error.code }}</strong
+      >: {{ error.message }}
     </p>
   }
 

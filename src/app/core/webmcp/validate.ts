@@ -17,11 +17,7 @@ export function validate(value: unknown, schema: JsonSchema): ValidateResult {
   return validateAt(value, schema, '');
 }
 
-function validateAt(
-  value: unknown,
-  schema: JsonSchema,
-  path: string,
-): ValidateResult {
+function validateAt(value: unknown, schema: JsonSchema, path: string): ValidateResult {
   switch (schema.type) {
     case 'object':
       return validateObject(value, schema, path);
@@ -40,11 +36,7 @@ function validateAt(
   }
 }
 
-function validateObject(
-  value: unknown,
-  schema: JsonSchema,
-  path: string,
-): ValidateResult {
+function validateObject(value: unknown, schema: JsonSchema, path: string): ValidateResult {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return fail(path, 'expected object', {
       expected: 'object',
@@ -88,11 +80,7 @@ function validateObject(
   return { ok: true, value };
 }
 
-function validateString(
-  value: unknown,
-  schema: JsonSchema,
-  path: string,
-): ValidateResult {
+function validateString(value: unknown, schema: JsonSchema, path: string): ValidateResult {
   if (typeof value !== 'string') {
     return fail(path, 'expected string', {
       expected: 'string',
@@ -102,11 +90,7 @@ function validateString(
   return checkEnum(value, schema, path);
 }
 
-function validateInteger(
-  value: unknown,
-  schema: JsonSchema,
-  path: string,
-): ValidateResult {
+function validateInteger(value: unknown, schema: JsonSchema, path: string): ValidateResult {
   if (typeof value !== 'number' || !Number.isInteger(value)) {
     return fail(path, 'expected integer', {
       expected: 'integer',
@@ -120,11 +104,7 @@ function validateInteger(
   return checkEnum(value, schema, path);
 }
 
-function validateNumber(
-  value: unknown,
-  schema: JsonSchema,
-  path: string,
-): ValidateResult {
+function validateNumber(value: unknown, schema: JsonSchema, path: string): ValidateResult {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return fail(path, 'expected number', {
       expected: 'number',
@@ -138,11 +118,7 @@ function validateNumber(
   return checkEnum(value, schema, path);
 }
 
-function checkMinimum(
-  value: number,
-  schema: JsonSchema,
-  path: string,
-): ValidateResult {
+function checkMinimum(value: number, schema: JsonSchema, path: string): ValidateResult {
   if (typeof schema.minimum === 'number' && value < schema.minimum) {
     return fail(path, `expected value >= ${schema.minimum}`, {
       minimum: schema.minimum,
@@ -152,11 +128,7 @@ function checkMinimum(
   return { ok: true, value };
 }
 
-function checkEnum(
-  value: unknown,
-  schema: JsonSchema,
-  path: string,
-): ValidateResult {
+function checkEnum(value: unknown, schema: JsonSchema, path: string): ValidateResult {
   if (schema.enum && !schema.enum.includes(value)) {
     return fail(path, 'value not in enum', {
       enum: schema.enum,

@@ -1,21 +1,13 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
-import {
-  ProductsFilterService,
-  type ProductCategory,
-} from './products-filter.service';
+import { ProductsFilterService, type ProductCategory } from './products-filter.service';
 
 /**
  * Static option list backing the category `<select>`. Kept in lockstep
  * with the `enum` declared by the `filterProducts` tool's JSON schema.
  */
-const CATEGORY_OPTIONS: readonly ProductCategory[] = [
-  'audio',
-  'wearable',
-  'home',
-  'office',
-];
+const CATEGORY_OPTIONS: readonly ProductCategory[] = ['audio', 'wearable', 'home', 'office'];
 
 /**
  * Products page (`/products`). The UI filters mirror the route-scoped

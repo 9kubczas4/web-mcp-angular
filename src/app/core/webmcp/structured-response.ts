@@ -18,19 +18,13 @@ export const ok = <T>(payload: T): StructuredResponse<T> => ({
  * Build an error Structured_Response. The payload carries a machine-readable
  * `code`, a human-readable `message`, and optional structured `details`.
  */
-export const err = (
-  code: string,
-  message: string,
-  details?: unknown,
-): StructuredResponse => ({
+export const err = (code: string, message: string, details?: unknown): StructuredResponse => ({
   status: 'error',
   payload: { code, message, details },
 });
 
 /** Type guard for the Structured_Response contract. */
-export function isStructuredResponse(
-  value: unknown,
-): value is StructuredResponse {
+export function isStructuredResponse(value: unknown): value is StructuredResponse {
   if (typeof value !== 'object' || value === null) {
     return false;
   }

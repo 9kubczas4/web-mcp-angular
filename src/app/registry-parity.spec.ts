@@ -51,15 +51,10 @@ const ROUTE_OWNED_TOOL_NAMES: Readonly<Record<DemoRoute, readonly string[]>> = {
 };
 
 /** Tools registered for the application's lifetime (global + service-scoped). */
-const GLOBAL_TOOL_NAMES: readonly string[] = [
-  'searchProducts',
-  'getCartSummary',
-  'addToCart',
-];
+const GLOBAL_TOOL_NAMES: readonly string[] = ['searchProducts', 'getCartSummary', 'addToCart'];
 
 function getModelContext(): ModelContextCore {
-  const ctx = (navigator as Navigator & { modelContext?: ModelContextCore })
-    .modelContext;
+  const ctx = (navigator as Navigator & { modelContext?: ModelContextCore }).modelContext;
   if (!ctx) {
     throw new Error('navigator.modelContext is missing');
   }
@@ -87,7 +82,11 @@ describe('Property 2: registry parity over router navigation', () => {
   let baselineNames: ReadonlySet<string>;
 
   beforeEach(() => {
-    baselineNames = setOf(getModelContext().getTools().map((t) => t.name));
+    baselineNames = setOf(
+      getModelContext()
+        .getTools()
+        .map((t) => t.name),
+    );
 
     TestBed.configureTestingModule({
       providers: [
@@ -107,7 +106,11 @@ describe('Property 2: registry parity over router navigation', () => {
     // `app.config.ts`.
     TestBed.inject(CartService);
 
-    const names = setOf(getModelContext().getTools().map((t) => t.name));
+    const names = setOf(
+      getModelContext()
+        .getTools()
+        .map((t) => t.name),
+    );
     expect(names.has('searchProducts')).toBe(true);
     expect(names.has('getCartSummary')).toBe(true);
     expect(names.has('addToCart')).toBe(true);
@@ -118,8 +121,7 @@ describe('Property 2: registry parity over router navigation', () => {
       const router = TestBed.inject(Router);
       await router.navigateByUrl('/');
     } catch {
-      const ctx = (navigator as Navigator & { modelContext?: ModelContextCore })
-        .modelContext;
+      const ctx = (navigator as Navigator & { modelContext?: ModelContextCore }).modelContext;
       for (const name of ['filterProducts', 'exportReport']) {
         if (ctx?.getTools().some((t) => t.name === name)) {
           ctx.unregisterTool(name);

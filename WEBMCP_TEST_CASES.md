@@ -6,14 +6,14 @@ Wszystkie wywołania wykonujesz przez **Chrome DevTools → zakładka „Model C
 
 ## Narzędzia i ich zasięg
 
-| Narzędzie | Zasięg | Aktywne na trasie |
-|---|---|---|
-| `searchProducts` | Global (root injector) | wszędzie |
-| `getCartSummary` | Service-scoped (CartService) | wszędzie |
-| `addToCart` | Service-scoped (CartService) | wszędzie |
-| `filterProducts` | Route-scoped | tylko `/products` |
-| `exportReport` | Route-scoped | tylko `/dashboard` |
-| `submitContactForm` | Form tool | tylko `/contact` |
+| Narzędzie           | Zasięg                       | Aktywne na trasie  |
+| ------------------- | ---------------------------- | ------------------ |
+| `searchProducts`    | Global (root injector)       | wszędzie           |
+| `getCartSummary`    | Service-scoped (CartService) | wszędzie           |
+| `addToCart`         | Service-scoped (CartService) | wszędzie           |
+| `filterProducts`    | Route-scoped                 | tylko `/products`  |
+| `exportReport`      | Route-scoped                 | tylko `/dashboard` |
+| `submitContactForm` | Form tool                    | tylko `/contact`   |
 
 ---
 
@@ -25,13 +25,16 @@ Narzędzie jest zarejestrowane w root injectorze, więc działa na każdej trasi
 
 **Trasa:** dowolna (np. `/`)  
 **Wywołanie:**
+
 ```json
 {
   "name": "searchProducts",
   "arguments": { "query": "headphones" }
 }
 ```
+
 **Oczekiwany wynik:**
+
 ```json
 {
   "status": "success",
@@ -46,17 +49,21 @@ Narzędzie jest zarejestrowane w root injectorze, więc działa na każdej trasi
 ### TC-02 — Puste zapytanie zwraca cały katalog
 
 **Wywołanie:**
+
 ```json
 { "name": "searchProducts", "arguments": { "query": "" } }
 ```
+
 **Oczekiwany wynik:** `status: "success"`, `matches` zawiera wszystkie 8 produktów.
 
 ### TC-03 — Brak wymaganych pól (błąd walidacji)
 
 **Wywołanie:**
+
 ```json
 { "name": "searchProducts", "arguments": {} }
 ```
+
 **Oczekiwany wynik:** `status: "error"`, `payload.code: "validation"`.
 
 ---
@@ -69,10 +76,13 @@ Narzędzia żyją razem z `CartService` (root injector), więc są dostępne na 
 
 **Trasa:** dowolna  
 **Wywołanie:**
+
 ```json
 { "name": "getCartSummary", "arguments": {} }
 ```
+
 **Oczekiwany wynik:**
+
 ```json
 {
   "status": "success",
@@ -83,23 +93,27 @@ Narzędzia żyją razem z `CartService` (root injector), więc są dostępne na 
 ### TC-05 — Dodanie produktu do koszyka
 
 **Wywołanie:**
+
 ```json
 {
   "name": "addToCart",
   "arguments": { "productId": "aud-001", "quantity": 2 }
 }
 ```
+
 **Oczekiwany wynik:** `status: "success"`, koszyk zawiera 1 linię z `productId: "aud-001"`, `quantity: 2`, `total: 398`.
 
 ### TC-06 — Ponowne dodanie tego samego produktu (akumulacja ilości)
 
 Po TC-05 wywołaj ponownie:
+
 ```json
 {
   "name": "addToCart",
   "arguments": { "productId": "aud-001", "quantity": 1 }
 }
 ```
+
 **Oczekiwany wynik:** ta sama linia, `quantity: 3`, `total: 597`.
 
 ### TC-07 — Nieistniejący produkt
@@ -110,6 +124,7 @@ Po TC-05 wywołaj ponownie:
   "arguments": { "productId": "xyz-999", "quantity": 1 }
 }
 ```
+
 **Oczekiwany wynik:** `status: "error"`, `payload.code: "not_found"`.
 
 ### TC-08 — Nieprawidłowa ilość (quantity = 0)
@@ -120,6 +135,7 @@ Po TC-05 wywołaj ponownie:
   "arguments": { "productId": "aud-001", "quantity": 0 }
 }
 ```
+
 **Oczekiwany wynik:** `status: "error"`, `payload.code: "validation"` (minimum: 1).
 
 ### TC-09 — Spójność stanu między narzędziem a UI
@@ -150,12 +166,14 @@ Narzędzie jest aktywne **tylko gdy jesteś na trasie `/products`**. To kluczowy
 
 **Trasa:** `/products`  
 **Wywołanie:**
+
 ```json
 {
   "name": "filterProducts",
   "arguments": { "category": "audio" }
 }
 ```
+
 **Oczekiwany wynik:** `matches` zawiera tylko `aud-001` i `aud-002`.
 
 ### TC-13 — Filtrowanie po maksymalnej cenie
@@ -166,6 +184,7 @@ Narzędzie jest aktywne **tylko gdy jesteś na trasie `/products`**. To kluczowy
   "arguments": { "maxPrice": 100 }
 }
 ```
+
 **Oczekiwany wynik:** produkty z ceną ≤ 100 (`aud-002` za 79 zł, `hom-001` za 39 zł).
 
 ### TC-14 — Filtrowanie po kategorii i cenie jednocześnie
@@ -176,6 +195,7 @@ Narzędzie jest aktywne **tylko gdy jesteś na trasie `/products`**. To kluczowy
   "arguments": { "category": "wearable", "maxPrice": 300 }
 }
 ```
+
 **Oczekiwany wynik:** tylko `wea-001` (249), bez `wea-002` (329).
 
 ### TC-15 — Nieprawidłowa kategoria
@@ -186,6 +206,7 @@ Narzędzie jest aktywne **tylko gdy jesteś na trasie `/products`**. To kluczowy
   "arguments": { "category": "furniture" }
 }
 ```
+
 **Oczekiwany wynik:** `status: "error"`, `payload.code: "validation"`.
 
 ### TC-16 — Auto-cleanup po opuszczeniu trasy
@@ -202,13 +223,16 @@ Narzędzie jest aktywne **tylko gdy jesteś na trasie `/products`**. To kluczowy
 
 **Trasa:** `/dashboard`  
 **Wywołanie:**
+
 ```json
 {
   "name": "exportReport",
   "arguments": { "format": "json" }
 }
 ```
+
 **Oczekiwany wynik:**
+
 ```json
 {
   "status": "success",
@@ -228,6 +252,7 @@ Powtórz TC-17 z `"format": "csv"` i `"format": "pdf"`. Oba powinny zwrócić `s
   "arguments": { "format": "xlsx" }
 }
 ```
+
 **Oczekiwany wynik:** `status: "error"`, `payload.code: "validation"`.
 
 ### TC-20 — Spójność z przyciskiem UI
@@ -246,6 +271,7 @@ Narzędzie jest produkowane przez `form()` z opcją `experimentalWebMcpTool`. Wa
 
 **Trasa:** `/contact`  
 **Wywołanie:**
+
 ```json
 {
   "name": "submitContactForm",
@@ -257,7 +283,9 @@ Narzędzie jest produkowane przez `form()` z opcją `experimentalWebMcpTool`. Wa
   }
 }
 ```
+
 **Oczekiwany wynik:**
+
 ```json
 {
   "status": "success",
@@ -277,6 +305,7 @@ Narzędzie jest produkowane przez `form()` z opcją `experimentalWebMcpTool`. Wa
   }
 }
 ```
+
 **Oczekiwany wynik:** `status: "error"`, `payload.code: "validation"`, błąd dla pola `name`.
 
 ### TC-23 — Nieprawidłowy adres e-mail
@@ -292,6 +321,7 @@ Narzędzie jest produkowane przez `form()` z opcją `experimentalWebMcpTool`. Wa
   }
 }
 ```
+
 **Oczekiwany wynik:** `status: "error"`, błąd walidacji dla pola `email`.
 
 ### TC-24 — Wiadomość za krótka (< 10 znaków)
@@ -307,6 +337,7 @@ Narzędzie jest produkowane przez `form()` z opcją `experimentalWebMcpTool`. Wa
   }
 }
 ```
+
 **Oczekiwany wynik:** `status: "error"`, błąd `minLength` dla pola `message`.
 
 ### TC-25 — Nieprawidłowy temat
@@ -322,6 +353,7 @@ Narzędzie jest produkowane przez `form()` z opcją `experimentalWebMcpTool`. Wa
   }
 }
 ```
+
 **Oczekiwany wynik:** `status: "error"`, błąd walidacji dla pola `topic`.
 
 ### TC-26 — Spójność z formularzem UI
@@ -359,13 +391,13 @@ Narzędzie jest produkowane przez `form()` z opcją `experimentalWebMcpTool`. Wa
 
 **ID produktów z katalogu:**
 
-| ID | Nazwa | Kategoria | Cena |
-|---|---|---|---|
-| `aud-001` | Studio Over-Ear Headphones | audio | 199 |
-| `aud-002` | Pocket Bluetooth Speaker | audio | 79 |
-| `wea-001` | Trail Runner Smartwatch | wearable | 249 |
-| `wea-002` | Sleep Tracking Ring | wearable | 329 |
-| `hom-001` | Smart Plant Sensor | home | 39 |
-| `hom-002` | Mesh Wi-Fi Node | home | 129 |
-| `off-001` | Standing Desk Converter | office | 219 |
-| `off-002` | USB-C Docking Station | office | 169 |
+| ID        | Nazwa                      | Kategoria | Cena |
+| --------- | -------------------------- | --------- | ---- |
+| `aud-001` | Studio Over-Ear Headphones | audio     | 199  |
+| `aud-002` | Pocket Bluetooth Speaker   | audio     | 79   |
+| `wea-001` | Trail Runner Smartwatch    | wearable  | 249  |
+| `wea-002` | Sleep Tracking Ring        | wearable  | 329  |
+| `hom-001` | Smart Plant Sensor         | home      | 39   |
+| `hom-002` | Mesh Wi-Fi Node            | home      | 129  |
+| `off-001` | Standing Desk Converter    | office    | 219  |
+| `off-002` | USB-C Docking Station      | office    | 169  |

@@ -1,10 +1,7 @@
 // The polyfill must load before any code reads `navigator.modelContext`.
 import '@mcp-b/webmcp-polyfill';
 
-import {
-  EnvironmentInjector,
-  createEnvironmentInjector,
-} from '@angular/core';
+import { EnvironmentInjector, createEnvironmentInjector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { ModelContextCore } from '@mcp-b/webmcp-types';
 
@@ -27,8 +24,7 @@ interface CallToolResultEnvelope {
 }
 
 function getModelContext(): ModelContextCore {
-  const ctx = (navigator as Navigator & { modelContext?: ModelContextCore })
-    .modelContext;
+  const ctx = (navigator as Navigator & { modelContext?: ModelContextCore }).modelContext;
   if (!ctx) {
     throw new Error('navigator.modelContext is missing');
   }
@@ -36,13 +32,10 @@ function getModelContext(): ModelContextCore {
 }
 
 function getTestingShim(): ModelContextTestingShim {
-  const shim = (
-    navigator as Navigator & { modelContextTesting?: ModelContextTestingShim }
-  ).modelContextTesting;
+  const shim = (navigator as Navigator & { modelContextTesting?: ModelContextTestingShim })
+    .modelContextTesting;
   if (!shim) {
-    throw new Error(
-      'navigator.modelContextTesting was not installed by @mcp-b/webmcp-polyfill',
-    );
+    throw new Error('navigator.modelContextTesting was not installed by @mcp-b/webmcp-polyfill');
   }
   return shim;
 }
@@ -103,10 +96,7 @@ describe('CartService — Property 5: addToCart mutates state only on valid inpu
   it('changes state iff productId is in the catalog AND quantity is a positive integer', () => {
     const catalogIds = SEED_PRODUCTS.map((p) => p.id);
 
-    const productIdArb = fc.oneof(
-      fc.constantFrom(...catalogIds),
-      fc.string(),
-    );
+    const productIdArb = fc.oneof(fc.constantFrom(...catalogIds), fc.string());
 
     const quantityArb = fc.oneof(
       fc.integer({ min: 1, max: 5 }),
@@ -125,9 +115,7 @@ describe('CartService — Property 5: addToCart mutates state only on valid inpu
 
         const productExists = catalogIds.includes(productId);
         const quantityIsPositiveInteger =
-          typeof quantity === 'number' &&
-          Number.isInteger(quantity) &&
-          quantity >= 1;
+          typeof quantity === 'number' && Number.isInteger(quantity) && quantity >= 1;
         const expectSuccess = productExists && quantityIsPositiveInteger;
 
         if (expectSuccess) {
@@ -177,10 +165,7 @@ describe('CartService — Property 5: addToCart mutates state only on valid inpu
         }
 
         const snapshot = scoped.cart.snapshot();
-        const expectedItemCount = [...reference.values()].reduce(
-          (n, line) => n + line.quantity,
-          0,
-        );
+        const expectedItemCount = [...reference.values()].reduce((n, line) => n + line.quantity, 0);
         const expectedTotal = [...reference.values()].reduce(
           (n, line) => n + line.quantity * line.price,
           0,
@@ -342,7 +327,7 @@ describe('CartService — Property 3: service-injector destruction unregisters s
     );
   });
 
-  it('destroying one injector leaves a sibling injector\'s tools intact, then both are gone', () => {
+  it("destroying one injector leaves a sibling injector's tools intact, then both are gone", () => {
     // The polyfill rejects duplicate-name registrations, so this is the
     // *sequenced* version: destroy A, then create B, then destroy B.
     const a = createScopedCartService();

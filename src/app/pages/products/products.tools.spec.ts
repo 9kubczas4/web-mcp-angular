@@ -5,7 +5,12 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Router, RouterOutlet, provideRouter, withExperimentalAutoCleanupInjectors } from '@angular/router';
+import {
+  Router,
+  RouterOutlet,
+  provideRouter,
+  withExperimentalAutoCleanupInjectors,
+} from '@angular/router';
 import type { ModelContextCore } from '@mcp-b/webmcp-types';
 
 import fc from 'fast-check';
@@ -34,20 +39,16 @@ interface CallToolResultEnvelope {
 }
 
 function getTestingShim(): ModelContextTestingShim {
-  const shim = (
-    navigator as Navigator & { modelContextTesting?: ModelContextTestingShim }
-  ).modelContextTesting;
+  const shim = (navigator as Navigator & { modelContextTesting?: ModelContextTestingShim })
+    .modelContextTesting;
   if (!shim) {
-    throw new Error(
-      'navigator.modelContextTesting was not installed by @mcp-b/webmcp-polyfill',
-    );
+    throw new Error('navigator.modelContextTesting was not installed by @mcp-b/webmcp-polyfill');
   }
   return shim;
 }
 
 function getModelContext(): ModelContextCore {
-  const ctx = (navigator as Navigator & { modelContext?: ModelContextCore })
-    .modelContext;
+  const ctx = (navigator as Navigator & { modelContext?: ModelContextCore }).modelContext;
   if (!ctx) {
     throw new Error('navigator.modelContext is missing');
   }
@@ -81,8 +82,7 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
       const router = TestBed.inject(Router);
       await router.navigateByUrl('/');
     } catch {
-      const ctx = (navigator as Navigator & { modelContext?: ModelContextCore })
-        .modelContext;
+      const ctx = (navigator as Navigator & { modelContext?: ModelContextCore }).modelContext;
       if (ctx?.getTools().some((t) => t.name === 'filterProducts')) {
         ctx.unregisterTool('filterProducts');
       }
@@ -96,10 +96,7 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
       fc.asyncProperty(fc.jsonValue(), async (input) => {
         let raw: string | null;
         try {
-          raw = await shim.executeTool(
-            'filterProducts',
-            JSON.stringify(input),
-          );
+          raw = await shim.executeTool('filterProducts', JSON.stringify(input));
         } catch (thrown) {
           const e = thrown as { name?: unknown; message?: unknown };
           expect(typeof e.name).toBe('string');
@@ -131,11 +128,7 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
     const invalidArgs = fc.oneof(
       fc.record({ extra: fc.jsonValue() }),
       fc.record({
-        category: fc
-          .string()
-          .filter(
-            (s) => !['audio', 'wearable', 'home', 'office'].includes(s),
-          ),
+        category: fc.string().filter((s) => !['audio', 'wearable', 'home', 'office'].includes(s)),
       }),
       fc.record({ category: fc.integer() }),
       fc.record({ maxPrice: fc.integer({ max: -1 }) }),
@@ -150,10 +143,7 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
         // "validate before any side effect".
         let raw: string | null;
         try {
-          raw = await shim.executeTool(
-            'filterProducts',
-            JSON.stringify(args),
-          );
+          raw = await shim.executeTool('filterProducts', JSON.stringify(args));
         } catch (thrown) {
           const e = thrown as { name?: unknown; message?: unknown };
           expect(typeof e.name).toBe('string');
@@ -185,10 +175,7 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
 
     await fc.assert(
       fc.asyncProperty(validArgs, async (args) => {
-        const raw = await shim.executeTool(
-          'filterProducts',
-          JSON.stringify(args),
-        );
+        const raw = await shim.executeTool('filterProducts', JSON.stringify(args));
         expect(raw).not.toBeNull();
         const envelope = JSON.parse(raw as string) as CallToolResultEnvelope;
         expect(isStructuredResponse(envelope.structuredContent)).toBe(true);
@@ -205,8 +192,7 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
 
   it('updates ProductsFilterService state so the UI reflects tool-driven filters', async () => {
     const shim = getTestingShim();
-    const fixture: ComponentFixture<RouterShellHost> =
-      TestBed.createComponent(RouterShellHost);
+    const fixture: ComponentFixture<RouterShellHost> = TestBed.createComponent(RouterShellHost);
     fixture.detectChanges();
 
     const router = TestBed.inject(Router);
@@ -221,10 +207,7 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
     expect(filterService.maxPrice()).toBeNull();
     expect(filterService.visibleProducts().length).toBe(8);
 
-    const raw = await shim.executeTool(
-      'filterProducts',
-      JSON.stringify({ maxPrice: 100 }),
-    );
+    const raw = await shim.executeTool('filterProducts', JSON.stringify({ maxPrice: 100 }));
     expect(raw).not.toBeNull();
     const envelope = JSON.parse(raw as string) as CallToolResultEnvelope;
     expect(isStructuredResponse(envelope.structuredContent)).toBe(true);
@@ -233,16 +216,15 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
       payload: { matches?: { id: string }[] };
     };
     expect(response.status).toBe('success');
-    expect(response.payload.matches?.map((p) => p.id).sort()).toEqual([
-      'aud-002',
-      'hom-001',
-    ]);
+    expect(response.payload.matches?.map((p) => p.id).sort()).toEqual(['aud-002', 'hom-001']);
 
     expect(filterService.maxPrice()).toBe(100);
     expect(filterService.category()).toBeNull();
-    expect(filterService.visibleProducts().map((p) => p.id).sort()).toEqual([
-      'aud-002',
-      'hom-001',
-    ]);
+    expect(
+      filterService
+        .visibleProducts()
+        .map((p) => p.id)
+        .sort(),
+    ).toEqual(['aud-002', 'hom-001']);
   });
 });

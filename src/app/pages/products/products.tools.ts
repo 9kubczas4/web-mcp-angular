@@ -34,8 +34,7 @@ interface FilterProductsArgs {
  */
 export const filterProductsTool = {
   name: 'filterProducts',
-  description:
-    'Filter the product catalog by optional category and maximum price.',
+  description: 'Filter the product catalog by optional category and maximum price.',
   inputSchema: FILTER_PRODUCTS_SCHEMA,
   execute: (args: FilterProductsArgs): StructuredResponse => {
     const result = validate(args, FILTER_PRODUCTS_SCHEMA);

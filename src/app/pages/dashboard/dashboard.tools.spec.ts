@@ -22,20 +22,16 @@ interface CallToolResultEnvelope {
 }
 
 function getTestingShim(): ModelContextTestingShim {
-  const shim = (
-    navigator as Navigator & { modelContextTesting?: ModelContextTestingShim }
-  ).modelContextTesting;
+  const shim = (navigator as Navigator & { modelContextTesting?: ModelContextTestingShim })
+    .modelContextTesting;
   if (!shim) {
-    throw new Error(
-      'navigator.modelContextTesting was not installed by @mcp-b/webmcp-polyfill',
-    );
+    throw new Error('navigator.modelContextTesting was not installed by @mcp-b/webmcp-polyfill');
   }
   return shim;
 }
 
 function getModelContext(): ModelContextCore {
-  const ctx = (navigator as Navigator & { modelContext?: ModelContextCore })
-    .modelContext;
+  const ctx = (navigator as Navigator & { modelContext?: ModelContextCore }).modelContext;
   if (!ctx) {
     throw new Error('navigator.modelContext is missing');
   }
@@ -67,8 +63,7 @@ describe('Property 1: exportReport always returns a Structured_Response', () => 
       const router = TestBed.inject(Router);
       await router.navigateByUrl('/');
     } catch {
-      const ctx = (navigator as Navigator & { modelContext?: ModelContextCore })
-        .modelContext;
+      const ctx = (navigator as Navigator & { modelContext?: ModelContextCore }).modelContext;
       if (ctx?.getTools().some((t) => t.name === 'exportReport')) {
         ctx.unregisterTool('exportReport');
       }
@@ -112,9 +107,7 @@ describe('Property 1: exportReport always returns a Structured_Response', () => 
     const invalidArgs = fc.oneof(
       fc.record({}),
       fc.record({
-        format: fc
-          .string()
-          .filter((s) => !['pdf', 'csv', 'json'].includes(s)),
+        format: fc.string().filter((s) => !['pdf', 'csv', 'json'].includes(s)),
       }),
       fc.record({ format: fc.integer() }),
       fc.record({
@@ -155,10 +148,7 @@ describe('Property 1: exportReport always returns a Structured_Response', () => 
 
     await fc.assert(
       fc.asyncProperty(validArgs, async (args) => {
-        const raw = await shim.executeTool(
-          'exportReport',
-          JSON.stringify(args),
-        );
+        const raw = await shim.executeTool('exportReport', JSON.stringify(args));
         expect(raw).not.toBeNull();
         const envelope = JSON.parse(raw as string) as CallToolResultEnvelope;
         expect(isStructuredResponse(envelope.structuredContent)).toBe(true);
@@ -176,9 +166,7 @@ describe('Property 1: exportReport always returns a Structured_Response', () => 
         expect(response.payload.format).toBe(args.format);
         expect(response.payload.rows).toBe(42);
         expect(typeof response.payload.generatedAt).toBe('string');
-        expect(
-          Number.isFinite(Date.parse(response.payload.generatedAt as string)),
-        ).toBe(true);
+        expect(Number.isFinite(Date.parse(response.payload.generatedAt as string))).toBe(true);
       }),
       { numRuns: 100 },
     );

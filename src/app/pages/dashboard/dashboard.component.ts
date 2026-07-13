@@ -1,10 +1,5 @@
 import { UpperCasePipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 
 import type { StructuredResponse } from '../../core/webmcp/structured-response';
 import { EXPORT_FORMATS, type ExportFormat, runExport } from './dashboard.tools';

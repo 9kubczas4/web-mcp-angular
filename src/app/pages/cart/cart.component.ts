@@ -1,11 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { CartService } from '../../core/cart/cart.service';
 import type { StructuredResponse } from '../../core/webmcp/structured-response';

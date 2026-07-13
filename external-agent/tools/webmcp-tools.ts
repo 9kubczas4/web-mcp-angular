@@ -45,9 +45,7 @@ async function openPage(url: string): Promise<string> {
 const optionalUrlSchema = z
   .string()
   .optional()
-  .describe(
-    'Full page URL with WebMCP. Omit to use the open page or WEBMCP_URL env.',
-  );
+  .describe('Full page URL with WebMCP. Omit to use the open page or WEBMCP_URL env.');
 
 export const listWebMcpToolsTool = new FunctionTool({
   name: 'list_webmcp_tools',
@@ -73,9 +71,7 @@ export const invokeWebMcpToolTool = new FunctionTool({
     'Invoke a WebMCP tool by name. Use list_webmcp_tools first for tool_name and inputSchema.',
   parameters: z.object({
     tool_name: z.string().describe('Exact tool name from list_webmcp_tools'),
-    arguments: z
-      .record(z.string(), z.unknown())
-      .describe('Arguments matching inputSchema'),
+    arguments: z.record(z.string(), z.unknown()).describe('Arguments matching inputSchema'),
     url: optionalUrlSchema,
   }),
   execute: async ({ tool_name, arguments: args, url }) => {
@@ -100,8 +96,4 @@ export const closeBrowserTool = new FunctionTool({
   },
 });
 
-export const webMcpTools = [
-  listWebMcpToolsTool,
-  invokeWebMcpToolTool,
-  closeBrowserTool,
-] as const;
+export const webMcpTools = [listWebMcpToolsTool, invokeWebMcpToolTool, closeBrowserTool] as const;

@@ -22,10 +22,7 @@ export const APP_ROUTES: Routes = [
     path: ROUTE_SEGMENT.products,
     loadComponent: () =>
       import('./pages/products/products.component').then((m) => m.ProductsComponent),
-    providers: [
-      ProductsFilterService,
-      provideExperimentalWebMcpTools([filterProductsTool]),
-    ],
+    providers: [ProductsFilterService, provideExperimentalWebMcpTools([filterProductsTool])],
   },
   {
     path: ROUTE_SEGMENT.dashboard,

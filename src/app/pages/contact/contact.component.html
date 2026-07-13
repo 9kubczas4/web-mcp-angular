@@ -2,21 +2,16 @@
   <h1 id="contact-title">Contact</h1>
   <p>
     This form registers the <code>submitContactForm</code> tool via <code>form()</code>'s
-    <code>experimentalWebMcpTool</code> option. The same submit action runs whether you click
-    Submit or invoke the tool through <code>navigator.modelContext</code>, so the validation
-    gating and the response shape are identical across both paths.
+    <code>experimentalWebMcpTool</code> option. The same submit action runs whether you click Submit
+    or invoke the tool through <code>navigator.modelContext</code>, so the validation gating and the
+    response shape are identical across both paths.
   </p>
 
   <div class="contact-grid">
     <form class="contact-form" (submit)="onSubmit($event)" novalidate>
       <div class="contact-form__row">
         <label for="contact-name">Name</label>
-        <input
-          id="contact-name"
-          type="text"
-          autocomplete="name"
-          [formField]="contactForm.name"
-        />
+        <input id="contact-name" type="text" autocomplete="name" [formField]="contactForm.name" />
       </div>
 
       <div class="contact-form__row">
@@ -66,7 +61,10 @@
             @if (fieldErrorMessages().length > 0) {
               <ul aria-label="Validation errors">
                 @for (entry of fieldErrorMessages(); track entry.field) {
-                  <li><strong>{{ entry.field }}</strong>: {{ entry.message }}</li>
+                  <li>
+                    <strong>{{ entry.field }}</strong
+                    >: {{ entry.message }}
+                  </li>
                 }
               </ul>
             }
@@ -78,8 +76,8 @@
     <aside class="side-card" aria-label="What this form proves">
       <h2>What this proves</h2>
       <p>
-        Validators are wired through <code>form()</code>'s schema. They run before submission
-        for both manual clicks and tool invocations.
+        Validators are wired through <code>form()</code>'s schema. They run before submission for
+        both manual clicks and tool invocations.
       </p>
       <p>
         On <code>/contact</code>, <code>navigator.modelContext.getTools()</code> includes

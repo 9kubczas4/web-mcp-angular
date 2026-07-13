@@ -34,9 +34,7 @@ export class ProductService {
       return [...all];
     }
     return all.filter(
-      (p) =>
-        p.name.toLowerCase().includes(needle) ||
-        p.description.toLowerCase().includes(needle),
+      (p) => p.name.toLowerCase().includes(needle) || p.description.toLowerCase().includes(needle),
     );
   }
 

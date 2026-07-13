@@ -52,9 +52,7 @@ export class CartService {
 
   readonly items: Signal<readonly CartLine[]> = this._items.asReadonly();
 
-  readonly itemCount = computed(() =>
-    this._items().reduce((n, line) => n + line.quantity, 0),
-  );
+  readonly itemCount = computed(() => this._items().reduce((n, line) => n + line.quantity, 0));
 
   readonly total = computed(() =>
     this._items().reduce((n, line) => n + line.quantity * line.price, 0),
@@ -63,16 +61,14 @@ export class CartService {
   constructor() {
     declareExperimentalWebMcpTool({
       name: 'getCartSummary',
-      description:
-        'Return the current cart line items, item count, and total price.',
+      description: 'Return the current cart line items, item count, and total price.',
       inputSchema: GET_CART_SUMMARY_SCHEMA,
       execute: (): StructuredResponse => ok(this.snapshot()),
     });
 
     declareExperimentalWebMcpTool({
       name: 'addToCart',
-      description:
-        'Add a product to the cart by catalog id and positive integer quantity.',
+      description: 'Add a product to the cart by catalog id and positive integer quantity.',
       inputSchema: ADD_TO_CART_SCHEMA,
       execute: (args): StructuredResponse => this.addToCartHandler(args),
     });
@@ -106,14 +102,10 @@ export class CartService {
     }
 
     const current = this._items();
-    const existingIndex = current.findIndex(
-      (line) => line.productId === productId,
-    );
+    const existingIndex = current.findIndex((line) => line.productId === productId);
     if (existingIndex >= 0) {
       const updated = current.map((line, index) =>
-        index === existingIndex
-          ? { ...line, quantity: line.quantity + quantity }
-          : line,
+        index === existingIndex ? { ...line, quantity: line.quantity + quantity } : line,
       );
       this._items.set(updated);
     } else {

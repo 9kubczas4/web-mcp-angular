@@ -45,7 +45,9 @@
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
   font-weight: 600;
-  transition: background-color 0.15s ease, transform 0.05s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.05s ease;
 }
 
 .hero__cta a.button.primary {
