@@ -49,28 +49,10 @@ const optionalUrlSchema = z
     'Full page URL with WebMCP. Omit to use the open page or WEBMCP_URL env.',
   );
 
-export const openWebPageTool = new FunctionTool({
-  name: 'open_web_page',
-  description:
-    'Open a WebMCP-enabled page in the browser. Required when switching sites or paths.',
-  parameters: z.object({
-    url: optionalUrlSchema,
-  }),
-  execute: async ({ url }) => {
-    const targetUrl = await openPage(resolvePageUrl(url));
-
-    return {
-      url: targetUrl,
-      count: webMcpSession.listTools().length,
-      tools: webMcpSession.listTools().map((tool) => tool.name),
-    };
-  },
-});
-
 export const listWebMcpToolsTool = new FunctionTool({
   name: 'list_webmcp_tools',
   description:
-    'List WebMCP tools on a page with name, description, and inputSchema. Opens the page when needed.',
+    'Open a WebMCP-enabled page and list its tools with name, description, and inputSchema. Pass url when switching sites or paths.',
   parameters: z.object({
     url: optionalUrlSchema,
   }),
@@ -119,7 +101,6 @@ export const closeBrowserTool = new FunctionTool({
 });
 
 export const webMcpTools = [
-  openWebPageTool,
   listWebMcpToolsTool,
   invokeWebMcpToolTool,
   closeBrowserTool,

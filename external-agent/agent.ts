@@ -19,12 +19,10 @@ TOOLS (only these): ${TOOL_NAMES}
 
 WORKFLOW
 
-1. User gives a URL → open_web_page (or pass url to list/invoke tools).
-2. No URL → use the default site above.
-3. list_webmcp_tools once to discover tool names and inputSchema.
-4. invoke_webmcp_tool at most once per tool name with the best single argument set.
-5. Answer the user from those results.
-6. close_browser when the session is no longer needed.
+1. list_webmcp_tools once to open the page and discover tool names and inputSchema. Pass url when the user gives one; otherwise use the default site above.
+2. invoke_webmcp_tool at most once per tool name with the best single argument set.
+3. Answer the user from those results.
+4. close_browser when the session is no longer needed.
 
 TOOL BUDGET (hard limits — exceeding them returns an error)
 
