@@ -205,7 +205,7 @@ describe('Property 1: filterProducts always returns a Structured_Response', () =
     const filterService = productsDe!.injector.get(ProductsFilterService);
 
     expect(filterService.maxPrice()).toBeNull();
-    expect(filterService.visibleProducts().length).toBe(8);
+    expect(filterService.visibleProducts().length).toBe(9);
 
     const raw = await shim.executeTool('filterProducts', JSON.stringify({ maxPrice: 100 }));
     expect(raw).not.toBeNull();

@@ -65,4 +65,11 @@ export const SEED_PRODUCTS: readonly Product[] = Object.freeze([
     category: 'office',
     price: 169,
   }),
+  Object.freeze({
+    id: 'off-003',
+    name: 'Mechanical Keyboard',
+    description: 'Compact wireless mechanical keyboard for desk and remote work.',
+    category: 'office',
+    price: 129,
+  }),
 ]) as readonly Product[];
