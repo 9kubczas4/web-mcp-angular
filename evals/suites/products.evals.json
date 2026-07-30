@@ -1,0 +1,129 @@
+[
+  {
+    "name": "Find headphones",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Find headphones"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "searchProducts",
+        "arguments": {
+          "query": { "$contains": "headphone" }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Search for keyboard",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Search for keyboard"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "searchProducts",
+        "arguments": {
+          "query": { "$contains": "keyboard" }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Show products under $100",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Show products under $100"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "filterProducts",
+        "arguments": {
+          "maxPrice": { "$lte": 100 }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Show office products",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Show office products"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "filterProducts",
+        "arguments": {
+          "category": "office"
+        }
+      }
+    ]
+  },
+  {
+    "name": "Find audio devices below $200",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Find audio devices below $200"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "filterProducts",
+        "arguments": {
+          "category": "audio",
+          "maxPrice": { "$lte": 200 }
+        }
+      }
+    ]
+  },
+  {
+    "name": "I need something for remote work",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "I need something for remote work"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "searchProducts",
+        "arguments": {
+          "query": { "$type": "string" }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Wrong-tool detection — search must not call addToCart",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Search for headphones"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "searchProducts",
+        "arguments": {
+          "query": { "$contains": "headphone" }
+        }
+      }
+    ]
+  }
+]

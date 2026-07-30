@@ -1,0 +1,195 @@
+[
+  {
+    "name": "Add two headphones",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Add two headphones to my cart. The headphones product id is aud-001."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "addToCart",
+        "arguments": {
+          "productId": "aud-001",
+          "quantity": 2
+        },
+        "mockOutput": {
+          "status": "success",
+          "payload": {
+            "items": [
+              {
+                "productId": "aud-001",
+                "name": "Studio Over-Ear Headphones",
+                "price": 199,
+                "quantity": 2
+              }
+            ],
+            "itemCount": 2,
+            "total": 398
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Add keyboard",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Add keyboard to my cart. The keyboard product id is off-003."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "addToCart",
+        "arguments": {
+          "productId": "off-003",
+          "quantity": { "$gte": 1 }
+        },
+        "mockOutput": {
+          "status": "success",
+          "payload": {
+            "items": [
+              {
+                "productId": "off-003",
+                "name": "Mechanical Keyboard",
+                "price": 129,
+                "quantity": 1
+              }
+            ],
+            "itemCount": 1,
+            "total": 129
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "What's inside my cart?",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "What's inside my cart?"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "getCartSummary",
+        "arguments": {},
+        "mockOutput": {
+          "status": "success",
+          "payload": {
+            "items": [
+              {
+                "productId": "aud-001",
+                "name": "Studio Over-Ear Headphones",
+                "price": 199,
+                "quantity": 2
+              }
+            ],
+            "itemCount": 2,
+            "total": 398
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "How many items do I have?",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "How many items do I have in my cart?"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "getCartSummary",
+        "mockOutput": {
+          "status": "success",
+          "payload": {
+            "items": [
+              {
+                "productId": "aud-001",
+                "name": "Studio Over-Ear Headphones",
+                "price": 199,
+                "quantity": 2
+              }
+            ],
+            "itemCount": 2,
+            "total": 398
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "What is my total?",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "What is my cart total?"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "getCartSummary",
+        "mockOutput": {
+          "status": "success",
+          "payload": {
+            "items": [
+              {
+                "productId": "aud-001",
+                "name": "Studio Over-Ear Headphones",
+                "price": 199,
+                "quantity": 2
+              }
+            ],
+            "itemCount": 2,
+            "total": 398
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Add headphones then check cart",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Add one pair of headphones (product id aud-001) and then tell me what is in my cart."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "addToCart",
+        "arguments": {
+          "productId": "aud-001",
+          "quantity": { "$gte": 1 }
+        },
+        "mockOutput": {
+          "status": "success",
+          "payload": {
+            "items": [
+              {
+                "productId": "aud-001",
+                "name": "Studio Over-Ear Headphones",
+                "price": 199,
+                "quantity": 1
+              }
+            ],
+            "itemCount": 1,
+            "total": 199
+          }
+        }
+      }
+    ]
+  }
+]

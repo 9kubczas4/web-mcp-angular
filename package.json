@@ -18,7 +18,8 @@
     "external-agent:build": "npm run experiment:build",
     "external-agent": "npm run external-agent:agent",
     "external-agent:agent": "npx adk run external-agent/agent.ts",
-    "external-agent:web": "npx adk web external-agent"
+    "external-agent:web": "npx adk web external-agent",
+    "evals": "node evals/run.mjs"
   },
   "private": true,
   "packageManager": "npm@10.9.8",
@@ -60,6 +61,7 @@
     "puppeteer": "^25.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.4",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "webmcp-evals": "^0.0.3"
   }
 }

@@ -9,7 +9,11 @@ const SEARCH_PRODUCTS_SCHEMA = {
   type: 'object',
   required: ['query'],
   properties: {
-    query: { type: 'string' },
+    query: {
+      type: 'string',
+      description:
+        'Text to match against store product names/descriptions (for example headphones, keyboard, speaker). Not for general-knowledge questions.',
+    },
   },
   additionalProperties: false,
 } as const satisfies JsonSchema;
@@ -22,7 +26,8 @@ const SEARCH_PRODUCTS_SCHEMA = {
  */
 export const searchProductsTool = {
   name: 'searchProducts',
-  description: 'Search the product catalog by name and description.',
+  description:
+    'Search this store\'s product catalog (audio, wearable, home, and office items) by name or description. Use only when the user wants to find products to browse or buy. Do not use for general knowledge, news, or other non-catalog questions.',
   inputSchema: SEARCH_PRODUCTS_SCHEMA,
   execute: (args: { query: string }): StructuredResponse => {
     const result = validate(args, SEARCH_PRODUCTS_SCHEMA);

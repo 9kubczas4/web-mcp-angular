@@ -39,6 +39,7 @@ Requires **Chrome Canary** with the WebMCP feature flag (used by Puppeteer).
 | `npm run external-agent:web` | Run the ADK web UI for the agent |
 | `npm run experiment:build` | Compile the external-agent package to `dist/` |
 | `npm run experiment:start` | Minimal Puppeteer script that lists page tools |
+| `npm run evals` | WebMCP evals (products, cart, negative) |
 
 ## Architecture
 
@@ -233,6 +234,12 @@ src/                              # Angular demo application
     │   └── cart/                 # CartService + service-scoped tools
     └── pages/                    # home, products, dashboard, cart, contact
 
+evals/                            # Official webmcp-evals suites (JSON + scripts)
+├── README.md
+├── run.mjs
+├── schemas/                      # Static tool lists for `local` mode
+└── suites/                       # Eval case JSON (products, cart, negative)
+
 external-agent/                   # ADK browser agent
 ├── agent.ts                      # LlmAgent definition + system prompt
 ├── core/
@@ -241,6 +248,22 @@ external-agent/                   # ADK browser agent
 ├── tools/webmcp-tools.ts         # list, invoke, close agent tools
 └── llm/                          # Gemini / Ollama model resolution
 ```
+
+## WebMCP Evals
+
+Probabilistic checks that an LLM selects the right page tools with the right
+arguments — using the official
+[WebMCP Evals CLI](https://github.com/GoogleChromeLabs/webmcp-tools/tree/main/evals-cli).
+Background: [Evals for WebMCP](https://developer.chrome.com/docs/ai/webmcp/evals).
+
+```bash
+# Set GEMINI_API_KEY in .env (see .env.example), then:
+npm run evals
+```
+
+Details, suite contents, and expected output: [evals/README.md](evals/README.md).
+
+<!-- Screenshot placeholder: drop a `.evals/` HTML report capture at docs/screenshots/webmcp-evals.png and link it here. -->
 
 ## Prerequisites
 

@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Who won the World Cup?",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Who won the World Cup?"
+      }
+    ],
+    "expectedCall": null
+  },
+  {
+    "name": "Tell me a joke",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Tell me a joke"
+      }
+    ],
+    "expectedCall": null
+  },
+  {
+    "name": "What's Angular?",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "What's Angular?"
+      }
+    ],
+    "expectedCall": null
+  },
+  {
+    "name": "Write a poem",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Write a poem"
+      }
+    ],
+    "expectedCall": null
+  }
+]

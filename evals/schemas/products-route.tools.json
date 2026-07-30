@@ -1,0 +1,68 @@
+{
+  "tools": [
+    {
+      "name": "searchProducts",
+      "description": "Search this store's product catalog (audio, wearable, home, and office items) by name or description. Use only when the user wants to find products to browse or buy. Do not use for general knowledge, news, programming topics, jokes, or other non-catalog questions.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["query"],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Text to match against store product names/descriptions (for example headphones, keyboard, speaker). Not for general-knowledge questions."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "filterProducts",
+      "description": "Filter the product catalog by optional category and maximum price.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": ["audio", "wearable", "home", "office"],
+            "description": "Product category to keep."
+          },
+          "maxPrice": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Maximum inclusive price in USD."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "getCartSummary",
+      "description": "Return the current cart line items, item count, and total price.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "addToCart",
+      "description": "Add a product to the cart by catalog id and positive integer quantity.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["productId", "quantity"],
+        "properties": {
+          "productId": {
+            "type": "string",
+            "description": "Catalog product id (for example aud-001 or off-003)."
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of units to add."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ]
+}
